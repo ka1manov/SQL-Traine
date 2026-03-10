@@ -1070,7 +1070,7 @@ q26 = InterviewQuestion(
     ),
     company_tags=["Netflix", "Uber"],
     pattern="Deduplication",
-    difficulty="medium",
+    difficulty="hard",
     tables=["streams"],
     solution_sql="""\
 WITH ranked AS (
@@ -1768,7 +1768,7 @@ q43 = InterviewQuestion(
     ),
     company_tags=["Twitter/X", "Meta"],
     pattern="Customer segmentation / RFM",
-    difficulty="medium",
+    difficulty="expert",
     tables=["streams"],
     solution_sql="""\
 WITH user_stats AS (
@@ -1878,7 +1878,7 @@ q45 = InterviewQuestion(
     ),
     company_tags=["Google", "Amazon"],
     pattern="Self-joins & hierarchies",
-    difficulty="easy",
+    difficulty="medium",
     tables=["employees", "departments"],
     solution_sql="""\
 WITH dept_avg AS (
@@ -1973,7 +1973,7 @@ q47 = InterviewQuestion(
     ),
     company_tags=["Amazon", "Meta"],
     pattern="Self-joins & hierarchies",
-    difficulty="easy",
+    difficulty="medium",
     tables=["orders", "customers", "products"],
     solution_sql="""\
 SELECT
