@@ -1,5 +1,13 @@
 # CLAUDE.md
 
+## Analysis Rules
+- Analyze ONLY what is explicitly present in provided data
+- Do NOT infer, assume, or extrapolate beyond what is stated
+- If something is unclear or missing — say "insufficient data"
+- Every claim must be traceable to the provided input
+- Prohibited phrases: "likely", "probably", "typically" (unless sourced from input)
+- Format findings as: CONFIRMED / UNCERTAIN / ABSENT
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
