@@ -17,7 +17,8 @@ BLOCKED_KEYWORDS = {
 PUBLIC_TABLES = [
     "departments", "employees", "customers", "products", "orders",
     "invoices", "salaries_log", "subscriptions", "streams", "bookings",
-    "ab_tests", "clickstream",
+    "ab_tests", "clickstream", "categories", "transactions", "user_profiles",
+    "tickets", "sensor_readings", "event_log",
 ]
 
 _SESSION_ID_RE = re.compile(r'^[a-zA-Z0-9_-]{1,48}$')
