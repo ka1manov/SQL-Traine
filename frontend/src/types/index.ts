@@ -204,3 +204,41 @@ export interface SQLPattern {
   use_cases: string[];
   related_task_ids: number[];
 }
+
+// Schema Builder
+export type ColumnDataType =
+  | 'SERIAL' | 'BIGSERIAL' | 'INTEGER' | 'BIGINT' | 'SMALLINT'
+  | 'VARCHAR' | 'TEXT' | 'BOOLEAN' | 'DATE' | 'TIMESTAMP' | 'TIMESTAMPTZ'
+  | 'NUMERIC' | 'REAL' | 'DOUBLE PRECISION' | 'JSONB' | 'JSON' | 'UUID';
+
+export interface SchemaColumn {
+  id: string;
+  name: string;
+  dataType: ColumnDataType;
+  length: number | null;
+  precision: number | null;
+  scale: number | null;
+  isPrimaryKey: boolean;
+  isNotNull: boolean;
+  isUnique: boolean;
+  defaultValue: string | null;
+  checkConstraint: string | null;
+  foreignKey: { tableId: string; columnId: string } | null;
+}
+
+export interface SchemaTable {
+  id: string;
+  name: string;
+  columns: SchemaColumn[];
+  position: { x: number; y: number };
+}
+
+export interface SchemaState {
+  tables: SchemaTable[];
+}
+
+export interface ValidateDDLResponse {
+  valid: boolean;
+  error: string | null;
+  details: string | null;
+}

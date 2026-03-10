@@ -19,6 +19,7 @@ const Progress = lazy(() => import('./pages/Progress'));
 const Leaderboard = lazy(() => import('./pages/Leaderboard'));
 const InterviewQuestions = lazy(() => import('./pages/InterviewQuestions'));
 const Patterns = lazy(() => import('./pages/Patterns'));
+const SchemaBuilder = lazy(() => import('./pages/SchemaBuilder'));
 
 function Loading() {
   return (
@@ -50,6 +51,7 @@ export default function App() {
                   <Route path="/interview" element={<Suspense fallback={<Loading />}><InterviewQuestions /></Suspense>} />
                   <Route path="/patterns" element={<Suspense fallback={<Loading />}><Patterns /></Suspense>} />
                   <Route path="/leaderboard" element={<Suspense fallback={<Loading />}><Leaderboard /></Suspense>} />
+                  <Route path="/schema-builder" element={<Suspense fallback={<Loading />}><SchemaBuilder /></Suspense>} />
                   <Route path="*" element={
                     <div className="flex flex-col items-center justify-center h-full gap-4 p-8">
                       <h2 className="text-4xl font-bold text-gray-400">404</h2>

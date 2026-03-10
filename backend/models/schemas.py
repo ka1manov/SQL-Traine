@@ -155,3 +155,14 @@ class ColumnInfo(BaseModel):
     nullable: bool
     default: str | None
     fk: str | None
+
+
+# Schema Builder
+class ValidateDDLRequest(BaseModel):
+    ddl: str
+
+
+class ValidateDDLResponse(BaseModel):
+    valid: bool
+    error: str | None = None
+    details: str | None = None

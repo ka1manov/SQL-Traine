@@ -4,6 +4,7 @@ import type {
   Assignment, LearningPath, MockSession, MockResult, AuthUser,
   HistoryEntry, LeaderboardEntry, StreakData, ColumnInfo, QueryTemplate,
   FlashcardState, TasksMeta, InterviewQuestion, InterviewMeta, SQLPattern,
+  ValidateDDLResponse,
 } from '../types';
 
 const api = axios.create({ baseURL: '/api' });
@@ -218,5 +219,11 @@ export async function fetchPatterns(category?: string): Promise<SQLPattern[]> {
 
 export async function fetchPatternCategories(): Promise<string[]> {
   const { data } = await api.get('/patterns/categories');
+  return data;
+}
+
+// Schema Builder
+export async function validateDDL(ddl: string): Promise<ValidateDDLResponse> {
+  const { data } = await api.post('/schema-builder/validate', { ddl });
   return data;
 }

@@ -3,7 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import {
   Database, Terminal, ListChecks, Star, BookOpen, Layers,
   Brain, BarChart3, Briefcase, Table2, Trophy, Menu, X, LogIn, LogOut, Keyboard,
-  FileQuestion, ScrollText,
+  FileQuestion, ScrollText, Blocks,
 } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import KeyboardShortcuts from './KeyboardShortcuts';
@@ -18,6 +18,7 @@ const navItems = [
   { to: '/interview', icon: FileQuestion, label: 'Interview Q' },
   { to: '/flashcards', icon: Brain, label: 'Flashcards' },
   { to: '/explorer', icon: Table2, label: 'Explorer' },
+  { to: '/schema-builder', icon: Blocks, label: 'Schema Builder' },
   { to: '/mock', icon: Layers, label: 'Mock Interview' },
   { to: '/eda', icon: BarChart3, label: 'EDA' },
   { to: '/take-home', icon: Briefcase, label: 'Take-Home' },

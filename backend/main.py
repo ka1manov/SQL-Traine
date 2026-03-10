@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 from db.connection import get_pool, close_pool
 from services.sandbox import cleanup_old_sandboxes
-from routers import execute, tasks, progress, mock, daily, history, bookmarks, streaks, leaderboard, format_sql, flashcard_review, auth, interview, patterns
+from routers import execute, tasks, progress, mock, daily, history, bookmarks, streaks, leaderboard, format_sql, flashcard_review, auth, interview, patterns, schema_builder
 from data.templates import TEMPLATES
 
 
@@ -59,6 +59,7 @@ app.include_router(format_sql.router)
 app.include_router(flashcard_review.router)
 app.include_router(interview.router)
 app.include_router(patterns.router)
+app.include_router(schema_builder.router)
 
 
 @app.get("/api/health")
