@@ -27,6 +27,7 @@ An interactive SQL learning platform for interview preparation. Practice queries
 ```bash
 git clone <repo-url>
 cd SQL-Traine
+cp backend/.env.example backend/.env
 docker compose up
 ```
 
