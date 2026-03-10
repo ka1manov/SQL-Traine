@@ -455,7 +455,7 @@ WITH sub_periods AS (
     SELECT
         customer_id,
         started_at,
-        COALESCE(ended_at, NOW()) AS ended_at
+        COALESCE(ended_at, CURRENT_DATE::TIMESTAMP) AS ended_at
     FROM subscriptions
 ),
 with_prev AS (
@@ -793,12 +793,12 @@ weekly_activity AS (
 )
 SELECT
     c.cohort_week,
-    ((wa.activity_week - c.cohort_week) / 7)::int AS week_offset,
+    (EXTRACT(EPOCH FROM wa.activity_week - c.cohort_week) / 604800)::int AS week_offset,
     COUNT(DISTINCT c.user_id) AS returning_users
 FROM cohorts c
 JOIN weekly_activity wa ON wa.user_id = c.user_id
 WHERE wa.activity_week >= c.cohort_week
-  AND ((wa.activity_week - c.cohort_week) / 7)::int <= 2
+  AND (EXTRACT(EPOCH FROM wa.activity_week - c.cohort_week) / 604800)::int <= 2
 GROUP BY c.cohort_week, week_offset
 ORDER BY c.cohort_week, week_offset;\
 """,
@@ -2303,8 +2303,8 @@ q54 = InterviewQuestion(
     id=54,
     title="Extract User Settings from JSONB",
     description=(
-        "From user_profiles, extract the theme and notifications settings from the JSONB settings column. "
-        "Return username, theme, and notifications_enabled. Only include users where settings is not null. "
+        "From user_profiles, extract the theme, plan, and email notification preference from the JSONB settings column. "
+        "Return username, theme, plan, and email_notifications (boolean). Only include users where settings is not null. "
         "Order by username."
     ),
     company_tags=["Stripe", "Airbnb"],
@@ -2314,13 +2314,14 @@ q54 = InterviewQuestion(
     solution_sql="""\
 SELECT username,
     settings->>'theme' AS theme,
-    (settings->>'notifications')::BOOLEAN AS notifications_enabled
+    settings->>'plan' AS plan,
+    (settings->'notifications'->>'email')::BOOLEAN AS email_notifications
 FROM user_profiles
 WHERE settings IS NOT NULL
 ORDER BY username;\
 """,
-    hint="Use ->> to extract JSONB values as text, and cast to BOOLEAN where needed.",
-    explanation="The ->> operator extracts values as text. Casting to BOOLEAN converts 'true'/'false' strings to proper boolean values.",
+    hint="Use ->> to extract JSONB text values. For nested keys, chain -> then ->>.",
+    explanation="The -> operator returns a JSONB sub-object, while ->> extracts the value as text. Chain them to reach nested keys like settings->'notifications'->>'email'.",
 )
 
 q55 = InterviewQuestion(
@@ -2421,8 +2422,8 @@ q58 = InterviewQuestion(
 WITH months AS (
     SELECT customer_id,
         generate_series(
-            DATE_TRUNC('month', started_at)::DATE,
-            DATE_TRUNC('month', COALESCE(ended_at, CURRENT_DATE))::DATE,
+            DATE_TRUNC('month', started_at),
+            DATE_TRUNC('month', COALESCE(ended_at, CURRENT_DATE)),
             '1 month'::INTERVAL
         )::DATE AS active_month
     FROM subscriptions
@@ -2432,7 +2433,7 @@ distinct_months AS (
 ),
 islands AS (
     SELECT customer_id, active_month,
-        active_month - (ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY active_month) * INTERVAL '1 month')::DATE AS grp
+        active_month - (ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY active_month) * INTERVAL '1 month') AS grp
     FROM distinct_months
 )
 SELECT customer_id, MAX(streak) AS longest_streak
@@ -2542,26 +2543,28 @@ q62 = InterviewQuestion(
     id=62,
     title="Ticket Resolution Chain",
     description=(
-        "Find tickets that have been reassigned (assigned_to changed). For each such ticket, "
-        "show ticket_ref, subject, priority, current assigned_to, and total number of status updates "
-        "(count of rows per ticket_ref). Order by update count DESC."
+        "Find tickets that have been reassigned (have multiple entries). For each such ticket, "
+        "show ticket_ref, subject, priority, assigned_to, and total number of status updates "
+        "(count of rows per ticket_ref). Order by update count DESC, ticket_ref."
     ),
     company_tags=["LinkedIn", "Salesforce"],
     pattern="Recursive hierarchy",
     difficulty="medium",
     tables=["tickets"],
     solution_sql="""\
-SELECT ticket_ref, subject, priority, assigned_to,
-    COUNT(*) OVER (PARTITION BY ticket_ref) AS update_count
-FROM tickets
-QUALIFY COUNT(*) OVER (PARTITION BY ticket_ref) > 1
+SELECT ticket_ref, subject, priority, assigned_to, update_count
+FROM (
+    SELECT ticket_ref, subject, priority, assigned_to,
+        COUNT(*) OVER (PARTITION BY ticket_ref) AS update_count
+    FROM tickets
+) t
+WHERE update_count > 1
 ORDER BY update_count DESC, ticket_ref;\
 """,
     hint="Use a window function to count rows per ticket_ref, then filter to those with more than one entry.",
     explanation=(
-        "Since QUALIFY is not available in all PostgreSQL versions, an alternative uses a subquery: "
-        "SELECT * FROM (SELECT *, COUNT(*) OVER (PARTITION BY ticket_ref) AS cnt FROM tickets) t WHERE cnt > 1. "
-        "The window count identifies tickets with multiple entries."
+        "A subquery with COUNT(*) OVER (PARTITION BY ticket_ref) counts entries per ticket. "
+        "The outer query filters to tickets with multiple entries, indicating reassignment."
     ),
 )
 

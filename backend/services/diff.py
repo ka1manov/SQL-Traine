@@ -76,8 +76,11 @@ def compute_diff(expected: dict, actual: dict) -> dict:
         act_keys = [_row_key(r) for r in act_rows]
         order_correct = exp_keys == act_keys
 
-    total = max(len(exp_rows), 1)
-    match_pct = round(len(matching) / total * 100, 1)
+    if len(exp_rows) == 0 and len(act_rows) == 0:
+        match_pct = 100.0
+    else:
+        total = max(len(exp_rows), 1)
+        match_pct = round(len(matching) / total * 100, 1)
 
     return {
         "match_pct": match_pct,

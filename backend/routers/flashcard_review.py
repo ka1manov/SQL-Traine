@@ -60,10 +60,10 @@ async def review_flashcard(review: FlashcardReview, request: Request):
 
         await conn.execute("""
             INSERT INTO flashcard_progress (user_id, card_id, ease_factor, interval_days, repetitions, next_review)
-            VALUES ($1, $2, $3, $4, $5, NOW() + ($4 || ' days')::interval)
+            VALUES ($1, $2, $3, $4, $5, NOW() + make_interval(days => $4::int))
             ON CONFLICT (user_id, card_id) DO UPDATE SET
                 ease_factor = $3, interval_days = $4, repetitions = $5,
-                next_review = NOW() + ($4 || ' days')::interval
+                next_review = NOW() + make_interval(days => $4::int)
         """, user_id, review.card_id, ef, interval, reps)
 
     return {"ease_factor": ef, "interval_days": interval, "repetitions": reps}

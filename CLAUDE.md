@@ -66,13 +66,15 @@ backend/
 │   ├── auth.py          # JWT (HS256) token creation/decode, user CRUD in app_users table
 │   └── diff.py          # Row-by-row result comparison (match_pct, missing/extra rows, order check)
 ├── data/                # Hard-coded content as Python dataclasses (not in DB)
-│   ├── tasks.py         # 35+ practice tasks with solutions
-│   ├── learning_paths.py # 6 paths, 16 steps with theory/examples/quiz/tips
-│   ├── flashcards.py    # Spaced-repetition flashcards
-│   └── assignments.py   # Multi-step take-home projects
+│   ├── tasks.py         # 76 practice tasks with solutions across 24 categories
+│   ├── learning_paths.py # 10 paths with theory/examples/quiz/tips
+│   ├── flashcards.py    # 60 spaced-repetition flashcards
+│   ├── assignments.py   # 8 multi-step take-home projects
+│   ├── interview_questions.py # 62 company interview questions
+│   └── patterns.py      # 25 SQL pattern templates across 12 categories
 └── db/
     ├── connection.py    # asyncpg pool singleton
-    └── init.sql         # 11 public tables + app tables + seed data
+    └── init.sql         # 18 public tables + app tables + seed data
 ```
 
 **Sandbox system**: Each user session gets a PostgreSQL schema (`sandbox_<session_id>`) with cloned tables for safe read/write isolation. Destructive keywords (DROP, TRUNCATE, etc.) are blocked before execution. Schemas older than 24h are cleaned up on startup.
@@ -88,7 +90,7 @@ frontend/src/
 ├── utils/api.ts         # Axios client with auth interceptor, all API fetch functions
 ├── types/index.ts       # TypeScript interfaces mirroring backend Pydantic models
 ├── components/          # Reusable: SQLEditor (Monaco), ResultTable, DiffView, Layout, Charts, etc.
-└── pages/               # 11 page components: Sandbox, Tasks, Learn, Flashcards, MockInterview, etc.
+└── pages/               # 14 page components: Sandbox, Tasks, Learn, Flashcards, MockInterview, InterviewQuestions, Patterns, SchemaBuilder, etc.
 ```
 
 **State**: Auth + progress + theme via React Context. Pages are lazy-loaded with Suspense. Axios interceptor auto-attaches JWT Bearer token.
@@ -111,4 +113,4 @@ Vite dev server proxies `/api` → `http://backend:8000` (Docker) or `http://loc
 
 ## Database
 
-11 public tables (employees, departments, customers, products, orders, invoices, salaries_log, subscriptions, streams, bookings, ab_tests/clickstream) plus app tables (app_users, user_progress, query_history, bookmarks, flashcard_progress, streaks). Schema defined in `backend/db/init.sql`.
+18 public tables (departments, employees, customers, products, orders, invoices, salaries_log, subscriptions, streams, bookings, ab_tests, clickstream, categories, transactions, user_profiles, tickets, sensor_readings, event_log) plus app tables (app_users, user_progress, query_history, bookmarks, flashcard_progress, streaks, assignment_progress, interview_progress). Schema defined in `backend/db/init.sql`.

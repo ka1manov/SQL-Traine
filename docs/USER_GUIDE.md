@@ -1,6 +1,6 @@
 # SQL Trainer — User Guide
 
-An interactive SQL learning platform for interview preparation. Practice queries, learn theory, track progress, and prepare for real-world SQL interviews.
+An interactive SQL learning platform for interview preparation. Practice queries, learn theory, track progress, and prepare for real-world SQL interviews at top tech companies.
 
 ---
 
@@ -8,20 +8,19 @@ An interactive SQL learning platform for interview preparation. Practice queries
 
 1. [Getting Started](#getting-started)
 2. [Sandbox — Free SQL Playground](#sandbox)
-3. [Tasks — Guided Practice](#tasks)
+3. [Tasks — 76 Guided Practice Problems](#tasks)
 4. [Daily Challenge — Build Streaks](#daily-challenge)
-5. [Learning Paths — Structured Curriculum](#learning-paths)
-6. [Patterns — SQL Cheat Sheet](#patterns)
-7. [Interview Questions — Top 50 Company Questions](#interview-questions)
-8. [Flashcards — Spaced Repetition](#flashcards)
-9. [Table Explorer — Browse the Database](#table-explorer)
+5. [Learning Paths — 10 Structured Courses](#learning-paths)
+6. [Patterns — 25 SQL Pattern Templates](#patterns)
+7. [Interview Questions — 62 Company Questions](#interview-questions)
+8. [Flashcards — 60 Spaced Repetition Cards](#flashcards)
+9. [Table Explorer — Browse 18 Tables](#table-explorer)
 10. [Schema Builder — Visual Database Design](#schema-builder)
 11. [Mock Interview — Timed Simulation](#mock-interview)
 12. [EDA — Data Visualization](#eda)
-13. [Take-Home Projects — Real-World Assignments](#take-home-projects)
+13. [Take-Home Projects — 8 Real-World Assignments](#take-home-projects)
 14. [Progress Dashboard — Track Your Learning](#progress-dashboard)
 15. [Leaderboard — Compete with Others](#leaderboard)
-16. [Settings & Preferences](#settings)
 
 ---
 
@@ -39,15 +38,16 @@ Open your browser and navigate to **http://localhost:5173**.
 
 ### Navigation
 
-The sidebar on the left contains links to all 14 sections of the platform. On mobile, tap the hamburger menu to open the sidebar.
+The sidebar on the left contains links to all sections of the platform.
 
 ![Main navigation sidebar](screenshots/01-sidebar-navigation.png)
 
 ### Account & Login
 
 At the bottom of the sidebar, enter a username and click the login icon to create an account. Logging in enables:
+- Progress tracking across tasks, interview questions, and take-home assignments
 - Bookmark saving
-- Flashcard progress tracking
+- Flashcard spaced repetition progress
 - Leaderboard participation
 - Query history persistence
 
@@ -67,15 +67,13 @@ Click the sun/moon icon at the top of the sidebar to switch between dark and lig
 | `Ctrl/Cmd + Shift + F` | Format SQL |
 | `Esc` | Close modal / Go back |
 
-Click the keyboard icon in the sidebar header to view all shortcuts.
-
 ---
 
 ## Sandbox
 
 **Route:** `/` (Home page)
 
-The Sandbox is a free-form SQL playground where you can write and execute any query against the practice database.
+The Sandbox is a free-form SQL playground where you can write and execute any query against the practice database (18 tables with realistic data).
 
 ![Sandbox page overview](screenshots/04-sandbox-overview.png)
 
@@ -84,7 +82,7 @@ The Sandbox is a free-form SQL playground where you can write and execute any qu
 - **Monaco SQL Editor** with syntax highlighting and autocomplete
 - **Run** button (or `Ctrl+Enter`) to execute queries
 - **Format** button (or `Ctrl+Shift+F`) to auto-format SQL
-- **Query Templates** dropdown — select from pre-built queries to get started
+- **15 Query Templates** — select from pre-built queries covering JOINs, aggregations, window functions, CTEs, and more
 - **Table Sidebar** — click any table name to see its schema
 
 ### Writing and Running Queries
@@ -98,9 +96,13 @@ The Sandbox is a free-form SQL playground where you can write and execute any qu
 
 ### Query Templates
 
-Click the templates dropdown to load pre-built queries for common operations (JOINs, aggregations, window functions, etc.).
+Click the templates dropdown to load pre-built queries for common operations.
 
 ![Query templates dropdown](screenshots/06-sandbox-templates.png)
+
+### Safety
+
+The sandbox runs queries in an isolated PostgreSQL schema. Destructive operations (DROP, TRUNCATE, DELETE without WHERE, ALTER, GRANT) are blocked at the keyword level.
 
 ---
 
@@ -108,14 +110,18 @@ Click the templates dropdown to load pre-built queries for common operations (JO
 
 **Route:** `/tasks`
 
-35+ practice tasks organized by category and difficulty. Each task has a description, expected output, optional hints, and a full solution.
+76 practice tasks organized across 24 categories and 4 difficulty levels. Each task includes a description, related tables, hints, a full solution, and an explanation.
 
 ![Tasks list page](screenshots/07-tasks-list.png)
+
+### Categories
+
+SELECT Basics, WHERE & Filtering, JOINs, Aggregation, Subqueries, Window Functions, CTEs, CASE & Conditional, Date & Time, String Functions, Set Operations, Self-Joins, Advanced JOINs, NULL Handling, EXISTS & Subqueries, Advanced Window Functions, Advanced Analytics, Recursive CTEs, JSONB & Arrays, Deduplication, Gap & Island, Financial Analysis, Median & Percentile, Sessionization.
 
 ### Filtering Tasks
 
 Use the dropdown filters at the top to narrow tasks by:
-- **Category**: SELECT, JOINs, Aggregations, Subqueries, Window Functions, and 20+ more
+- **Category**: 24 categories
 - **Difficulty**: Easy, Medium, Hard, Expert
 
 ### Solving a Task
@@ -127,12 +133,6 @@ Use the dropdown filters at the top to narrow tasks by:
 
 ![Task detail view](screenshots/08-task-detail.png)
 
-### Getting Help
-
-- **Show Hint** — reveals a hint to guide you (yellow section)
-- **Show Solution** — reveals the expected SQL query
-- **Explanation** — detailed walkthrough of the solution approach
-
 ### Understanding Feedback
 
 After checking your solution, you'll see:
@@ -143,6 +143,12 @@ After checking your solution, you'll see:
 - **Column/row order warnings** when applicable
 
 ![Diff view after checking solution](screenshots/09-task-diff-view.png)
+
+### Getting Help
+
+- **Show Hint** — reveals a hint to guide you
+- **Show Solution** — reveals the expected SQL query
+- **Explanation** — detailed walkthrough of the solution approach
 
 ### Bookmarking
 
@@ -164,35 +170,31 @@ A new task every day to build consistent practice habits. Complete daily challen
 - **Best Streak** — your longest streak ever
 - **Calendar** — visual display of completed days
 
-### How It Works
-
-1. Open the Daily Challenge page
-2. Read and solve today's task
-3. Click **Submit** to check your answer
-4. Your streak updates automatically on correct answers
-
 ---
 
 ## Learning Paths
 
 **Route:** `/learn`
 
-6 structured learning paths that take you from basics to advanced SQL:
+10 structured learning paths from basics to advanced PostgreSQL topics:
 
-1. **SELECT Basics** — Filtering, sorting, LIMIT
-2. **JOINs** — INNER, LEFT, RIGHT, FULL, CROSS
-3. **Aggregations** — GROUP BY, HAVING, aggregate functions
-4. **Subqueries** — Correlated, EXISTS, IN
-5. **Window Functions** — ROW_NUMBER, RANK, LAG/LEAD
-6. **Advanced** — CTEs, CASE, COALESCE, string functions
+1. **SQL Fundamentals** — SELECT, WHERE, ORDER BY, LIMIT
+2. **Joins Mastery** — INNER, LEFT, RIGHT, FULL, CROSS, self-joins
+3. **Aggregation & Grouping** — GROUP BY, HAVING, aggregate functions
+4. **Subqueries & CTEs** — Correlated subqueries, EXISTS, WITH clauses
+5. **Window Functions** — ROW_NUMBER, RANK, LAG/LEAD, NTILE, frames
+6. **Interview Ready** — Common patterns, optimization, edge cases
+7. **JSONB & Array Mastery** — JSONB operators, array functions, unnesting
+8. **Recursive CTEs & Hierarchies** — Tree traversal, organizational charts
+9. **Time-Series & Gap Analysis** — Gap-and-island technique, date series
+10. **Financial SQL Patterns** — Running totals, moving averages, YoY growth
 
 ![Learning paths overview](screenshots/11-learning-paths.png)
 
 ### Path Structure
 
 Each path contains multiple steps. Each step includes:
-- **Theory** — concept explanation
-- **Key Points** — bullet-point summary
+- **Theory** — concept explanation with key points
 - **Syntax** — SQL syntax reference
 - **Examples** — annotated SQL queries with explanations
 - **Knowledge Check** — quiz questions with hidden answers
@@ -213,19 +215,23 @@ Switch to the **Progress Audit** tab to see a detailed breakdown of completion a
 
 **Route:** `/patterns`
 
-A cheat sheet of 20+ common SQL patterns with templates, examples, and explanations.
+25 SQL pattern templates organized into 12 categories: Aggregation, Arrays, CTEs, Deduplication, Filtering, JSONB, Joins, Recursion, Statistical, Time Series, Window Functions, and Advanced.
 
 ![Patterns page](screenshots/14-patterns-overview.png)
 
 ### Using Patterns
 
-1. Filter by category (Aggregation, Joins, Window Functions, etc.)
-2. Expand a pattern card to see details
+1. Filter by category using the category pills at the top
+2. Expand a pattern card to see template SQL, a runnable example, and explanation
 3. **Copy Template** — copies the SQL template to your clipboard
 4. **Run in Sandbox** — opens the Sandbox with the example query pre-filled
 5. **Related Tasks** — jump to practice tasks that use this pattern
 
 ![Expanded pattern card](screenshots/15-pattern-detail.png)
+
+### New Patterns
+
+Recently added patterns include JSONB Value Extraction, JSONB Array Expansion, UNNEST & Array Aggregation, DISTINCT ON, PERCENTILE_CONT/Median, Gap & Island Detection, and Recursive CTE for Hierarchies.
 
 ---
 
@@ -233,14 +239,18 @@ A cheat sheet of 20+ common SQL patterns with templates, examples, and explanati
 
 **Route:** `/interview`
 
-Top 50 SQL interview questions from real companies (Google, Amazon, Meta, Spotify, etc.).
+62 SQL interview questions sourced from real interviews at 14 companies: Google, Amazon, Meta, Stripe, Netflix, Apple, Airbnb, LinkedIn, Uber, Spotify, Twitter/X, Salesforce, Square, and Tesla.
 
 ![Interview questions list](screenshots/16-interview-list.png)
+
+### Question Patterns
+
+17 SQL patterns covered: Top-N per group, Cumulative/running totals, Year-over-year growth, Pivot/conditional aggregation, Gap & Island analysis, Self-join comparison, Revenue/financial metrics, Funnel analysis, Cohort retention, Deduplication, Sessionization, JSONB extraction, Recursive hierarchy, and more.
 
 ### Filtering & Searching
 
 - **Search** — filter by title or description keyword
-- **Company** — filter by company (Google, Amazon, Meta, etc.)
+- **Company** — filter by company tag
 - **Pattern** — filter by SQL pattern type
 - **Difficulty** — Easy, Medium, Hard, Expert
 - Click any **company tag** on a question card to filter by that company
@@ -255,12 +265,12 @@ Top 50 SQL interview questions from real companies (Google, Amazon, Meta, Spotif
 
 ![Interview question detail](screenshots/17-interview-detail.png)
 
-### Additional Helpers
+### Progress Tracking
 
-- **Show Hint** — guided hint
-- **Show Solution** — the expected SQL
-- **View Pattern** — link to the related SQL pattern
-- **Show Explanation** — detailed walkthrough
+Your interview question progress is saved to the server (requires login):
+- Solved status and best match percentage
+- Attempt count per question
+- Visual indicators on the question list (green checkmark for solved)
 
 ---
 
@@ -268,7 +278,7 @@ Top 50 SQL interview questions from real companies (Google, Amazon, Meta, Spotif
 
 **Route:** `/flashcards`
 
-100+ flashcards with spaced repetition (SM-2 algorithm) to memorize SQL concepts, syntax, and best practices.
+60 flashcards with spaced repetition (SM-2 algorithm) covering SQL concepts, syntax, and best practices. Topics include: SELECT basics, JOINs, aggregations, window functions, CTEs, recursive CTEs, JSONB, arrays, deduplication, percentiles, gap-and-island, sessionization, and date functions.
 
 ![Flashcards page](screenshots/18-flashcards.png)
 
@@ -291,22 +301,19 @@ The SM-2 algorithm adjusts review intervals based on your ratings:
 - Your **ease factor** and **interval** are shown below each card
 - Progress is saved when logged in
 
-### Navigation
-
-- **Prev/Next** — move between cards
-- **Shuffle** — randomize card order
-- **Reset** — go back to the first card
-- **Learned counter** — tracks cards reviewed 2+ times
-
 ---
 
 ## Table Explorer
 
 **Route:** `/explorer`
 
-Browse all 11+ database tables, view their schemas, and paginate through data.
+Browse all 18 database tables, view their schemas, and paginate through data.
 
 ![Table Explorer page](screenshots/19-explorer.png)
+
+### Tables Available
+
+`departments`, `employees`, `customers`, `products`, `orders`, `invoices`, `salaries_log`, `subscriptions`, `streams`, `bookings`, `ab_tests`, `clickstream`, `categories`, `transactions`, `user_profiles`, `tickets`, `sensor_readings`, `event_log`
 
 ### Features
 
@@ -314,14 +321,6 @@ Browse all 11+ database tables, view their schemas, and paginate through data.
 - **Schema display** — columns with data types, NOT NULL constraints, and FK relationships
 - **Data browser** — paginated view (50 rows per page)
 - **Page navigation** — Previous/Next with row range indicator
-
-### Schema Information
-
-For each column you can see:
-- Column name
-- Data type (VARCHAR, INTEGER, SERIAL, etc.)
-- **NOT NULL** constraint (red badge)
-- **Foreign Key** reference (yellow badge showing target table.column)
 
 ---
 
@@ -334,8 +333,6 @@ A visual database design tool for creating table schemas, defining relationships
 ![Schema Builder overview](screenshots/20-schema-builder-overview.png)
 
 ### Layout
-
-The Schema Builder has three panels:
 
 | Panel | Content |
 |-------|---------|
@@ -350,7 +347,7 @@ The Schema Builder has three panels:
 3. Double-click the table header to rename it
 4. Drag the header to reposition the table
 
-![Table card on canvas](screenshots/21-schema-builder-table.png)
+![Table cards on canvas with FK arrows](screenshots/21-schema-builder-table.png)
 
 ### Adding Columns
 
@@ -363,28 +360,17 @@ The Schema Builder has three panels:
    - **Precision/Scale** — for NUMERIC(p,s)
    - **Constraints** — toggle PRIMARY KEY, NOT NULL, UNIQUE
    - **Default Value** — raw SQL expression (e.g., `NOW()`, `0`, `'active'`)
-   - **CHECK Constraint** — validation expression (e.g., `age > 0`)
+   - **CHECK Constraint** — validation expression (e.g., `price > 0`)
    - **Foreign Key** — select target table and column
 4. Click **Save**
 
 ![Column editor modal](screenshots/22-schema-builder-column-editor.png)
 
-### Defining Foreign Keys
+### Foreign Key Relationships
 
-1. Open a column editor (click any column or add a new one)
-2. In the **Foreign Key** section, select the target table
-3. Select the target column (typically a PRIMARY KEY)
-4. Save the column
-5. An arrow appears on the canvas connecting the two tables
+When you define a foreign key on a column, an SVG arrow is drawn on the canvas connecting the two tables. The DDL auto-generates `REFERENCES` clauses, and tables are output in topological order (referenced tables first).
 
-![FK relationship arrows](screenshots/23-schema-builder-fk-arrows.png)
-
-### DDL Preview
-
-The right panel shows the auto-generated `CREATE TABLE` statements in real time. The DDL:
-- Updates instantly when you modify the schema
-- Uses **topological sort** to ensure referenced tables appear first
-- Includes all constraints inline (PK, NOT NULL, UNIQUE, DEFAULT, CHECK, REFERENCES)
+![FK relationship arrows between tables](screenshots/23-schema-builder-fk-arrows.png)
 
 ### Validating DDL
 
@@ -394,11 +380,11 @@ Click **Validate** to send the DDL to the backend, which executes it in a tempor
 
 ![DDL validation result](screenshots/24-schema-builder-validation.png)
 
-### Export & Import
+### Export, Import & Persistence
 
 - **Export** — download your schema as a JSON file
 - **Import** — load a previously exported schema from a JSON file
-- Your schema is also **auto-saved to localStorage** and persists across page refreshes
+- Your schema is **auto-saved to localStorage** and persists across page refreshes
 
 ### Reference Guide
 
@@ -424,10 +410,7 @@ A timed interview simulation: 5 random tasks in 30 minutes, mimicking a real SQL
 1. Select a difficulty (or "All" for mixed)
 2. Click **Start Interview**
 3. Solve 5 random tasks within 30 minutes
-4. For each task:
-   - Read the description
-   - Write and submit your SQL
-   - Or **Skip** to move to the next question
+4. For each task: read the description, write and submit your SQL, or **Skip**
 5. View your final score and per-task breakdown
 
 ### During the Interview
@@ -460,8 +443,6 @@ Exploratory Data Analysis — write SQL queries and automatically visualize the 
 
 ### Chart Types
 
-The platform auto-detects the best chart type, or you can override manually:
-
 | Chart | When Auto-Selected |
 |-------|-------------------|
 | **Bar** | Default for most queries |
@@ -485,7 +466,18 @@ The platform auto-detects the best chart type, or you can override manually:
 
 **Route:** `/take-home`
 
-Multi-step real-world SQL assignments inspired by companies like Google, Amazon, and Meta.
+8 multi-step real-world SQL assignments inspired by companies like Spotify, Airbnb, and Google. Each project has 4-5 steps that build on each other.
+
+| Project | Company | Steps |
+|---------|---------|-------|
+| Spotify Streaming Analytics | Spotify | 4 |
+| Airbnb Booking Insights | Airbnb | 4 |
+| E-Commerce Dashboard | Amazon | 4 |
+| Retention & Churn Analysis | Netflix | 5 |
+| Ride Analytics & Surge Pricing | Uber | 4 |
+| Connection & Network Analytics | LinkedIn | 4 |
+| Payment Funnel Analysis | Stripe | 5 |
+| Engagement Metrics | Meta | 4 |
 
 ![Take-Home projects list](screenshots/31-takehome-list.png)
 
@@ -498,6 +490,7 @@ Multi-step real-world SQL assignments inspired by companies like Google, Amazon,
    - Write your SQL
    - Click **Run & Check** to verify
 4. Completed steps show a green checkmark in the tab bar
+5. Progress is saved to the server (requires login)
 
 ![Take-Home step view](screenshots/32-takehome-step.png)
 
@@ -515,20 +508,20 @@ A personal analytics dashboard showing your learning progress across all tasks a
 
 | Metric | Description |
 |--------|-------------|
-| **Solved** | Tasks completed (X/36) |
+| **Solved** | Tasks completed (X/76) |
 | **Completion** | Overall percentage |
 | **Attempts** | Total attempts across all tasks |
 | **Avg Match** | Average match percentage |
 
 ### Visualizations
 
-- **Skills Radar Chart** — your proficiency across SQL categories (SELECT, JOINs, etc.)
+- **Skills Radar Chart** — your proficiency across SQL categories
 - **Difficulty Pie Chart** — breakdown of tasks solved by difficulty level
 - **Category Bars** — detailed per-category progress bars
 
 ### Export
 
-Click **Export** to download your progress data as a JSON file with timestamp.
+Click **Export** to download your progress data as a JSON file.
 
 ---
 
@@ -554,24 +547,16 @@ Users are ranked by **tasks solved** (descending). The table shows:
 
 ---
 
-## Settings
-
-### Dark/Light Theme
-
-Toggle via the sun/moon icon in the sidebar header. Both themes are fully supported across all pages and components.
-
-### Keyboard Shortcuts
-
-Click the keyboard icon in the sidebar to view all available shortcuts.
-
-### Data Persistence
+## Data Persistence
 
 | Data | Storage |
 |------|---------|
 | Theme preference | localStorage |
 | Schema Builder designs | localStorage |
-| Interview progress | localStorage |
 | Auth token | localStorage |
+| Task progress | Server (requires login) |
+| Interview question progress | Server (requires login) |
+| Assignment progress | Server (requires login) |
 | Flashcard progress | Server (requires login) |
 | Bookmarks | Server (requires login) |
 | Query history | Server (requires login) |
@@ -581,20 +566,27 @@ Click the keyboard icon in the sidebar to view all available shortcuts.
 
 ## Database Schema
 
-The practice database contains 11+ tables for realistic SQL exercises:
+The practice database contains 18 tables for realistic SQL exercises:
 
 | Table | Description |
 |-------|-------------|
-| `employees` | Employee records with departments |
 | `departments` | Department information |
+| `employees` | Employee records with departments, salaries |
 | `customers` | Customer data |
-| `products` | Product catalog |
+| `products` | Product catalog with categories |
 | `orders` | Order transactions |
 | `invoices` | Invoice records |
-| `salaries_log` | Salary history |
-| `subscriptions` | Subscription data |
-| `streams` | Streaming platform data |
+| `salaries_log` | Salary change history |
+| `subscriptions` | Subscription data with plans |
+| `streams` | Music/video streaming data |
 | `bookings` | Booking records |
-| `ab_tests` / `clickstream` | A/B testing and analytics data |
+| `ab_tests` | A/B test experiment data |
+| `clickstream` | User click/page view events |
+| `categories` | Hierarchical category tree (self-referencing) |
+| `transactions` | Financial transaction records |
+| `user_profiles` | User profiles with JSONB settings and tags array |
+| `tickets` | Support ticket tracking |
+| `sensor_readings` | IoT sensor data with anomaly flags |
+| `event_log` | Application event log with session IDs and JSONB event data |
 
 Use the [Table Explorer](#table-explorer) to browse schemas and data for all tables.
