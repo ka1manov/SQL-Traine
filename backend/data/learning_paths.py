@@ -1529,6 +1529,266 @@ _interview_steps = [
 ]
 
 # ---------------------------------------------------------------------------
+# Path 7: JSONB & Array Mastery
+# ---------------------------------------------------------------------------
+_jsonb_steps = [
+    PathStep(
+        title="JSONB Basics: Accessing & Querying",
+        description="Extract values from JSONB columns using ->, ->>, and @> operators.",
+        task_ids=[59, 60, 61],
+        example_sql="SELECT settings->>'theme' AS theme\nFROM user_profiles\nWHERE settings @> '{\"notifications\": true}';",
+        theory=(
+            "PostgreSQL's JSONB type stores JSON data in an efficient binary format that supports "
+            "indexing and rich querying. The -> operator returns a JSON element by key (still JSONB), "
+            "while ->> returns the value as text. For nested access, chain operators: "
+            "col->'address'->>'city'.\n\n"
+            "The containment operator @> checks if the left JSONB contains the right: "
+            "settings @> '{\"theme\": \"dark\"}' returns true if settings has that key-value pair. "
+            "This is index-friendly with GIN indexes.\n\n"
+            "Use jsonb_each() to expand a JSONB object into key-value rows, jsonb_array_elements() "
+            "to unnest a JSONB array, and jsonb_typeof() to check value types. Cast extracted text "
+            "to other types as needed: (col->>'amount')::NUMERIC."
+        ),
+        key_points=[
+            "-> returns JSONB, ->> returns TEXT — choose based on whether you need further nesting",
+            "@> is the containment operator — checks if left contains right",
+            "Cast ->> results to the type you need: ::INT, ::NUMERIC, ::BOOLEAN",
+            "GIN indexes on JSONB columns make @> and ? operators fast",
+        ],
+        syntax="SELECT col->>'key' FROM t;\nSELECT * FROM t WHERE col @> '{\"k\": \"v\"}';\nSELECT * FROM t WHERE col ? 'key';",
+        examples=[
+            SQLExample("Extract nested JSONB", "SELECT username, settings->>'theme' AS theme FROM user_profiles WHERE settings->>'theme' IS NOT NULL;", "The ->> operator extracts the theme value as text from the settings JSONB column."),
+            SQLExample("Containment query", "SELECT username FROM user_profiles WHERE settings @> '{\"notifications\": true}';", "The @> operator checks if the JSONB contains the specified key-value pair."),
+        ],
+        quiz=[
+            QuizQuestion("What is the difference between -> and ->> in PostgreSQL?", "-> returns a JSONB value (preserving type for further chaining), while ->> returns the value as a plain TEXT string."),
+            QuizQuestion("How do you check if a JSONB column contains a specific key?", "Use the ? operator: WHERE col ? 'key_name'. For key-value containment, use @>: WHERE col @> '{\"key\": \"value\"}'."),
+        ],
+        tips=[
+            "In interviews, mention GIN indexes when discussing JSONB performance — it shows you understand production considerations.",
+            "Always cast ->> results when comparing with non-text types to avoid implicit cast issues.",
+        ],
+    ),
+    PathStep(
+        title="Arrays: UNNEST, ANY, and Aggregation",
+        description="Work with PostgreSQL array types using UNNEST, ANY/ALL, and array_agg.",
+        task_ids=[62, 63],
+        example_sql="SELECT username, UNNEST(tags) AS tag\nFROM user_profiles;",
+        theory=(
+            "PostgreSQL supports native array columns (TEXT[], INT[], etc.). Arrays are useful for "
+            "storing multi-value attributes without a separate join table.\n\n"
+            "UNNEST(array) expands an array into a set of rows — one row per element. This is essential "
+            "for querying individual array elements. Combine with GROUP BY to aggregate across unnested values.\n\n"
+            "The ANY(array) operator checks if a value matches any element: WHERE 'sql' = ANY(tags). "
+            "ALL(array) checks if a condition holds for every element. array_agg() does the reverse — "
+            "it aggregates rows back into an array.\n\n"
+            "Array functions include array_length(), array_position(), array_remove(), and the || "
+            "concatenation operator. Use the @> and <@ operators for array containment checks."
+        ),
+        key_points=[
+            "UNNEST(array) expands an array into rows for per-element analysis",
+            "ANY(array) checks membership: WHERE value = ANY(col)",
+            "array_agg() aggregates values back into an array",
+            "@> checks array containment: ARRAY[1,2] @> ARRAY[1] is TRUE",
+        ],
+        syntax="SELECT UNNEST(arr_col) FROM t;\nSELECT * FROM t WHERE val = ANY(arr_col);\nSELECT array_agg(col) FROM t GROUP BY grp;",
+        examples=[
+            SQLExample("Unnest and count tags", "SELECT tag, COUNT(*) FROM (SELECT UNNEST(tags) AS tag FROM user_profiles) t GROUP BY tag ORDER BY COUNT(*) DESC;", "UNNEST expands each user's tags array into rows, then GROUP BY counts occurrences of each tag."),
+        ],
+        quiz=[
+            QuizQuestion("What does UNNEST do to an array?", "It expands the array into a set of rows, with one row per element. This turns an array column into a table-like set for joining and aggregation."),
+        ],
+        tips=[
+            "Interviewers love the UNNEST + GROUP BY combo for tag analysis — practice it until it's automatic.",
+        ],
+    ),
+]
+
+# ---------------------------------------------------------------------------
+# Path 8: Recursive CTEs & Hierarchies
+# ---------------------------------------------------------------------------
+_recursive_steps = [
+    PathStep(
+        title="Recursive CTE Fundamentals",
+        description="Understand the structure and execution of recursive CTEs.",
+        task_ids=[55, 56],
+        example_sql="WITH RECURSIVE tree AS (\n  SELECT id, name, parent_id, 0 AS level\n  FROM categories WHERE parent_id IS NULL\n  UNION ALL\n  SELECT c.id, c.name, c.parent_id, t.level + 1\n  FROM categories c JOIN tree t ON c.parent_id = t.id\n)\nSELECT * FROM tree ORDER BY level, name;",
+        theory=(
+            "A recursive CTE has two parts joined by UNION ALL: the base case (anchor) and the "
+            "recursive step. The anchor runs first and returns the starting rows. Then the recursive "
+            "step runs repeatedly, each time using the rows produced by the previous iteration, until "
+            "no new rows are generated.\n\n"
+            "The syntax is: WITH RECURSIVE cte AS (anchor UNION ALL recursive_step) SELECT ... "
+            "The RECURSIVE keyword is required. The recursive step must reference the CTE name.\n\n"
+            "For hierarchies like org charts or category trees, the anchor selects root nodes "
+            "(WHERE parent_id IS NULL) and the recursive step joins children to parents. Add a level "
+            "counter to track depth. Add a path array to build materialized paths for display."
+        ),
+        key_points=[
+            "Recursive CTEs have two parts: anchor (base case) + recursive step joined by UNION ALL",
+            "The RECURSIVE keyword is mandatory in PostgreSQL",
+            "Execution stops when the recursive step returns zero rows",
+            "Always include a termination condition to prevent infinite loops",
+        ],
+        syntax="WITH RECURSIVE cte_name AS (\n  -- anchor\n  SELECT ... WHERE parent_id IS NULL\n  UNION ALL\n  -- recursive step\n  SELECT ... FROM table JOIN cte_name ON ...\n)\nSELECT * FROM cte_name;",
+        examples=[
+            SQLExample("Category tree traversal", "WITH RECURSIVE tree AS (\n  SELECT id, name, parent_id, 1 AS depth\n  FROM categories WHERE parent_id IS NULL\n  UNION ALL\n  SELECT c.id, c.name, c.parent_id, t.depth + 1\n  FROM categories c JOIN tree t ON c.parent_id = t.id\n)\nSELECT * FROM tree ORDER BY depth, name;", "The anchor selects root categories. The recursive step joins children to already-found parents, incrementing depth. Terminates when no more children exist."),
+        ],
+        quiz=[
+            QuizQuestion("What are the two parts of a recursive CTE?", "The anchor (base case) that provides starting rows, and the recursive step that references the CTE itself and adds new rows in each iteration until no more rows are produced."),
+            QuizQuestion("When does a recursive CTE stop executing?", "When the recursive step produces no new rows (empty result set). Without proper termination, it could loop infinitely, so PostgreSQL has a max recursion depth setting."),
+        ],
+        tips=[
+            "Recursive CTEs appear in nearly every senior-level SQL interview. Practice hierarchical traversal until the pattern is second nature.",
+            "Always mention termination conditions when discussing recursive CTEs — it shows production awareness.",
+        ],
+    ),
+    PathStep(
+        title="Advanced Recursion: Paths and Aggregation",
+        description="Build materialized paths, compute hierarchical aggregates, and traverse graphs.",
+        task_ids=[57, 58],
+        example_sql="WITH RECURSIVE tree AS (\n  SELECT id, name, parent_id, name::TEXT AS path\n  FROM categories WHERE parent_id IS NULL\n  UNION ALL\n  SELECT c.id, c.name, c.parent_id, t.path || ' > ' || c.name\n  FROM categories c JOIN tree t ON c.parent_id = t.id\n)\nSELECT * FROM tree ORDER BY path;",
+        theory=(
+            "Beyond simple traversal, recursive CTEs can build materialized paths (breadcrumb strings), "
+            "compute cumulative values up or down a hierarchy, and even detect cycles.\n\n"
+            "To build a path, concatenate names at each level: t.path || ' > ' || c.name. This produces "
+            "strings like 'Electronics > Computers > Laptops' that show the full hierarchy.\n\n"
+            "For hierarchical aggregates, traverse the tree first, then join with aggregate queries to "
+            "roll up values from children to parents. To detect cycles, maintain an array of visited IDs "
+            "and check membership: WHERE NOT c.id = ANY(t.visited)."
+        ),
+        key_points=[
+            "Concatenate at each recursion level to build materialized paths",
+            "Use arrays to track visited nodes and detect cycles",
+            "Combine recursive CTEs with window functions for hierarchical ranking",
+            "PostgreSQL's CYCLE clause (v14+) provides built-in cycle detection",
+        ],
+        syntax=None,
+        examples=[
+            SQLExample("Full path with depth", "WITH RECURSIVE tree AS (\n  SELECT id, name, parent_id, ARRAY[id] AS path_ids, name::TEXT AS full_path\n  FROM categories WHERE parent_id IS NULL\n  UNION ALL\n  SELECT c.id, c.name, c.parent_id, t.path_ids || c.id, t.full_path || ' > ' || c.name\n  FROM categories c JOIN tree t ON c.parent_id = t.id\n  WHERE NOT c.id = ANY(t.path_ids)\n)\nSELECT * FROM tree ORDER BY full_path;", "Tracks visited IDs in an array to prevent cycles, and builds a readable breadcrumb path."),
+        ],
+        quiz=[
+            QuizQuestion("How can you detect cycles in a recursive CTE?", "Track visited node IDs in an array column, and add WHERE NOT node.id = ANY(cte.visited_ids) to the recursive step. PostgreSQL 14+ also has a built-in CYCLE clause."),
+        ],
+        tips=[
+            "When asked about recursive queries, start by identifying the base case and termination condition — interviewers value structured thinking.",
+        ],
+    ),
+]
+
+# ---------------------------------------------------------------------------
+# Path 9: Time-Series & Gap Analysis
+# ---------------------------------------------------------------------------
+_timeseries_steps = [
+    PathStep(
+        title="Gap & Island Detection",
+        description="Identify consecutive sequences and gaps in time-series data.",
+        task_ids=[67, 68, 69],
+        example_sql="WITH numbered AS (\n  SELECT *, recorded_at - ROW_NUMBER() OVER (ORDER BY recorded_at) * INTERVAL '1 day' AS grp\n  FROM sensor_readings\n)\nSELECT MIN(recorded_at) AS start_date, MAX(recorded_at) AS end_date, COUNT(*) AS length\nFROM numbered GROUP BY grp ORDER BY start_date;",
+        theory=(
+            "The gap-and-island problem identifies consecutive groups (islands) and missing values "
+            "(gaps) in sequential data. The classic technique uses ROW_NUMBER: subtract the row number "
+            "from the value (or date) — consecutive values produce the same difference, creating a "
+            "grouping key.\n\n"
+            "For date sequences: date - ROW_NUMBER() * INTERVAL '1 day' gives the same base date for "
+            "consecutive dates. Group by this computed value to find each island.\n\n"
+            "For numeric sequences: value - ROW_NUMBER() OVER (ORDER BY value) gives the same offset "
+            "for consecutive integers. Gaps in the sequence break this pattern."
+        ),
+        key_points=[
+            "The trick: subtract ROW_NUMBER from the value — consecutive values share the same difference",
+            "For dates: date - ROW_NUMBER() * INTERVAL creates grouping keys for islands",
+            "Gaps appear where the difference changes",
+            "PARTITION BY allows detecting islands within groups (per sensor, per user, etc.)",
+        ],
+        syntax="WITH grps AS (\n  SELECT *, val - ROW_NUMBER() OVER (ORDER BY val) AS island_id\n  FROM table\n)\nSELECT MIN(val), MAX(val), COUNT(*)\nFROM grps GROUP BY island_id;",
+        examples=[
+            SQLExample("Find active streaks", "SELECT sensor_id, MIN(recorded_at) AS streak_start, MAX(recorded_at) AS streak_end, COUNT(*) AS readings\nFROM (\n  SELECT *, recorded_at::DATE - (ROW_NUMBER() OVER (PARTITION BY sensor_id ORDER BY recorded_at::DATE))::INT * INTERVAL '1 day' AS grp\n  FROM sensor_readings WHERE NOT is_anomaly\n) t GROUP BY sensor_id, grp ORDER BY sensor_id, streak_start;", "Groups consecutive non-anomalous readings per sensor into streaks using the date minus row_number technique."),
+        ],
+        quiz=[
+            QuizQuestion("What is the core technique for detecting islands in sequential data?", "Subtract ROW_NUMBER() from the sequential value. Consecutive values produce the same difference, which becomes a grouping key. Non-consecutive values produce different differences, breaking the group."),
+        ],
+        tips=[
+            "Gap-and-island is a top interview pattern at Google and Amazon — practice it with both date and integer sequences.",
+        ],
+    ),
+    PathStep(
+        title="Sessionization & Time Windows",
+        description="Group events into sessions based on time gaps and analyze session behavior.",
+        task_ids=[73, 74, 75, 76],
+        example_sql="SELECT session_id, COUNT(*) AS events,\n  MIN(created_at) AS start, MAX(created_at) AS end,\n  EXTRACT(EPOCH FROM MAX(created_at) - MIN(created_at)) AS duration_sec\nFROM event_log GROUP BY session_id;",
+        theory=(
+            "Sessionization groups a stream of events into logical sessions based on time gaps. If two "
+            "consecutive events are more than N minutes apart, a new session starts. This is fundamental "
+            "for web analytics, product metrics, and behavioral analysis.\n\n"
+            "The technique uses LAG() to get the previous event timestamp, then a CASE expression to "
+            "flag session boundaries where the gap exceeds the threshold. A cumulative SUM of these "
+            "flags creates session IDs.\n\n"
+            "Once sessions are defined, aggregate to compute metrics: session duration, event count, "
+            "conversion within session, bounce rate, etc."
+        ),
+        key_points=[
+            "Use LAG() to find time between consecutive events",
+            "Flag new sessions where the gap exceeds a threshold",
+            "SUM() the flags with a window function to create session IDs",
+            "EXTRACT(EPOCH FROM interval) converts time differences to seconds",
+        ],
+        syntax=None,
+        examples=[
+            SQLExample("Basic session metrics", "SELECT session_id, user_id, COUNT(*) AS event_count, MIN(created_at) AS session_start, MAX(created_at) AS session_end, EXTRACT(EPOCH FROM MAX(created_at) - MIN(created_at)) AS duration_seconds FROM event_log GROUP BY session_id, user_id ORDER BY session_start;", "Groups pre-assigned sessions and computes core metrics: event count, start/end times, and duration."),
+        ],
+        quiz=[
+            QuizQuestion("What SQL technique is used to detect session boundaries?", "Use LAG() to get the previous event's timestamp, compute the time gap, and flag rows where the gap exceeds the session timeout threshold. Cumulative SUM of these flags creates session IDs."),
+        ],
+        tips=[
+            "Sessionization questions appear at Uber, Netflix, and Spotify interviews. Know both the pre-assigned session_id approach and the gap-based approach.",
+        ],
+    ),
+]
+
+# ---------------------------------------------------------------------------
+# Path 10: Financial SQL Patterns
+# ---------------------------------------------------------------------------
+_financial_steps = [
+    PathStep(
+        title="Running Balances & Transaction Analysis",
+        description="Compute running totals, balances, and financial aggregates from transaction data.",
+        task_ids=[70, 71, 72],
+        example_sql="SELECT txn_date, amount,\n  SUM(amount) OVER (ORDER BY txn_date) AS running_balance\nFROM transactions WHERE account_id = 1;",
+        theory=(
+            "Financial SQL requires precise calculations with running totals, period comparisons, and "
+            "categorized aggregations. Running balance is computed with SUM() OVER (ORDER BY date) — "
+            "this creates a cumulative sum that represents the account balance after each transaction.\n\n"
+            "Period-over-period comparison uses LAG() to access previous period values: "
+            "current_month - LAG(current_month) OVER (ORDER BY month). Percentage change is "
+            "(current - previous) / previous * 100.\n\n"
+            "The COUNT(*) FILTER (WHERE condition) syntax is PostgreSQL-specific and extremely useful "
+            "for computing conditional aggregates without CASE expressions. For example: "
+            "COUNT(*) FILTER (WHERE txn_type = 'credit') counts only credit transactions."
+        ),
+        key_points=[
+            "SUM() OVER (ORDER BY date) computes running balances",
+            "LAG() enables period-over-period comparisons",
+            "COUNT/SUM FILTER (WHERE ...) is cleaner than CASE for conditional aggregates",
+            "NUMERIC type prevents floating-point errors in financial calculations",
+        ],
+        syntax="SELECT SUM(amount) OVER (ORDER BY txn_date) AS running_bal FROM transactions;\nSELECT COUNT(*) FILTER (WHERE type = 'credit') FROM transactions;",
+        examples=[
+            SQLExample("Running balance per account", "SELECT account_id, txn_date, amount, SUM(amount) OVER (PARTITION BY account_id ORDER BY txn_date, id) AS running_balance FROM transactions ORDER BY account_id, txn_date;", "Partitions by account to keep balances separate, orders by date and id for deterministic results."),
+            SQLExample("Monthly summary with FILTER", "SELECT DATE_TRUNC('month', txn_date) AS month, COUNT(*) FILTER (WHERE txn_type = 'credit') AS credits, COUNT(*) FILTER (WHERE txn_type = 'debit') AS debits, SUM(amount) AS net_amount FROM transactions GROUP BY 1 ORDER BY 1;", "FILTER clauses compute separate aggregates for credits and debits without CASE expressions."),
+        ],
+        quiz=[
+            QuizQuestion("Why use NUMERIC instead of FLOAT for financial data?", "FLOAT has binary floating-point precision issues (e.g., 0.1 + 0.2 != 0.3). NUMERIC stores exact decimal values, which is essential for financial calculations where rounding errors are unacceptable."),
+            QuizQuestion("What does COUNT(*) FILTER (WHERE ...) do?", "It counts only the rows that match the FILTER condition. It's a PostgreSQL-specific shorthand that's cleaner than COUNT(CASE WHEN condition THEN 1 END) and can be used with any aggregate function."),
+        ],
+        tips=[
+            "Financial SQL questions test precision and edge case handling. Always mention NUMERIC over FLOAT and discuss NULL handling in aggregates.",
+            "Running balance with SUM OVER is a very common interview pattern — practice partition ordering.",
+        ],
+    ),
+]
+
+# ---------------------------------------------------------------------------
 # Assemble all paths
 # ---------------------------------------------------------------------------
 
@@ -1574,5 +1834,33 @@ LEARNING_PATHS: list[LearningPath] = [
         description="Advanced patterns for technical interviews.",
         icon="Award",
         steps=_interview_steps,
+    ),
+    LearningPath(
+        id=7,
+        title="JSONB & Array Mastery",
+        description="Query JSON documents and array columns in PostgreSQL.",
+        icon="Braces",
+        steps=_jsonb_steps,
+    ),
+    LearningPath(
+        id=8,
+        title="Recursive CTEs & Hierarchies",
+        description="Traverse trees, graphs, and hierarchical data with recursive queries.",
+        icon="GitBranch",
+        steps=_recursive_steps,
+    ),
+    LearningPath(
+        id=9,
+        title="Time-Series & Gap Analysis",
+        description="Detect gaps, islands, and sessions in sequential data.",
+        icon="Clock",
+        steps=_timeseries_steps,
+    ),
+    LearningPath(
+        id=10,
+        title="Financial SQL Patterns",
+        description="Running balances, period comparisons, and conditional aggregates.",
+        icon="DollarSign",
+        steps=_financial_steps,
     ),
 ]

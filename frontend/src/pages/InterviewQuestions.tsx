@@ -9,6 +9,7 @@ import useLocalStorage from '../hooks/useLocalStorage';
 import {
   fetchInterviewQuestions, fetchInterviewMeta, fetchInterviewQuestion,
   checkInterviewQuestion, formatSQL, fetchTableSchema,
+  fetchInterviewProgress, updateInterviewProgress,
 } from '../utils/api';
 import type { InterviewQuestion, InterviewMeta, CheckResponse, ColumnInfo } from '../types';
 
@@ -35,6 +36,12 @@ export default function InterviewQuestions() {
 
   useEffect(() => {
     fetchInterviewMeta().then(setMeta).catch(console.error);
+    fetchInterviewProgress().then(rows => {
+      const serverSolved = rows.filter(r => r.solved).map(r => r.question_id);
+      if (serverSolved.length > 0) {
+        setSolvedIds(prev => [...new Set([...prev, ...serverSolved])]);
+      }
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -65,6 +72,7 @@ export default function InterviewQuestions() {
       if (res.correct && !solvedIds.includes(selected.id)) {
         setSolvedIds(prev => [...prev, selected.id]);
       }
+      updateInterviewProgress(selected.id, res.correct, res.match_pct, 1).catch(() => {});
     } catch (err: any) {
       setResult({ correct: false, match_pct: 0, diff: null, actual: null, expected: null, error: err.message });
     } finally {

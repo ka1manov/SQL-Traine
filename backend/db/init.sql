@@ -251,6 +251,27 @@ CREATE TABLE daily_streaks (
     UNIQUE(user_id, completed_date)
 );
 
+CREATE TABLE assignment_progress (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES app_users(id) ON DELETE CASCADE,
+    assignment_id INT NOT NULL,
+    step INT NOT NULL,
+    completed BOOLEAN DEFAULT FALSE,
+    completed_at TIMESTAMP,
+    UNIQUE(user_id, assignment_id, step)
+);
+
+CREATE TABLE interview_progress (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES app_users(id) ON DELETE CASCADE,
+    question_id INT NOT NULL,
+    solved BOOLEAN DEFAULT FALSE,
+    best_match_pct FLOAT DEFAULT 0,
+    attempts INT DEFAULT 0,
+    last_attempt_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(user_id, question_id)
+);
+
 -- ============================================================
 -- SEED DATA
 -- ============================================================

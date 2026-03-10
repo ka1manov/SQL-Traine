@@ -707,6 +707,279 @@ PATTERNS: list[SQLPattern] = [
         ],
         related_task_ids=[21, 25, 34, 54],
     ),
+
+    # ── JSONB Operations (19-20) ──
+    SQLPattern(
+        id=19,
+        name="JSONB Value Extraction",
+        category="JSONB",
+        description="Extract and query values from JSONB columns using ->, ->>, and containment operators.",
+        template_sql=(
+            "SELECT\n"
+            "    col->>'key' AS text_value,\n"
+            "    (col->>'number_key')::INT AS int_value\n"
+            "FROM -- your_table\n"
+            "WHERE col @> '{\"key\": \"value\"}';"
+        ),
+        example_sql=(
+            "SELECT username,\n"
+            "    settings->>'theme' AS theme,\n"
+            "    (settings->>'notifications')::BOOLEAN AS notifs\n"
+            "FROM user_profiles\n"
+            "WHERE settings @> '{\"notifications\": true}';"
+        ),
+        explanation=(
+            "PostgreSQL JSONB supports rich querying. The -> operator returns a JSONB element, "
+            "while ->> returns the value as text. The @> containment operator checks if the left "
+            "JSONB contains the right. Cast ->> results to the needed type (::INT, ::BOOLEAN, ::NUMERIC). "
+            "GIN indexes make @> and ? operators fast."
+        ),
+        use_cases=[
+            "Extract configuration values from a settings JSONB column",
+            "Filter records by nested JSONB properties",
+            "Aggregate numeric values stored inside JSONB documents",
+        ],
+        related_task_ids=[59, 60, 61, 76],
+    ),
+    SQLPattern(
+        id=20,
+        name="JSONB Array Expansion",
+        category="JSONB",
+        description="Expand JSONB arrays into rows using jsonb_array_elements for per-element analysis.",
+        template_sql=(
+            "SELECT\n"
+            "    t.id,\n"
+            "    elem->>'key' AS value\n"
+            "FROM -- your_table t,\n"
+            "    jsonb_array_elements(t.json_col->'array_key') AS elem;"
+        ),
+        example_sql=(
+            "SELECT e.user_id,\n"
+            "    (elem->>'product_id')::INT AS product_id,\n"
+            "    (elem->>'amount')::NUMERIC AS amount\n"
+            "FROM event_log e,\n"
+            "    jsonb_array_elements(\n"
+            "        CASE WHEN jsonb_typeof(e.event_data->'items') = 'array'\n"
+            "        THEN e.event_data->'items' ELSE '[]'::jsonb END\n"
+            "    ) AS elem\n"
+            "WHERE e.event_type = 'purchase';"
+        ),
+        explanation=(
+            "jsonb_array_elements() is a set-returning function that expands a JSONB array into "
+            "one row per element. Each element is a JSONB value that can be further queried with "
+            "-> and ->>. Use LATERAL JOIN or implicit lateral (comma syntax) to join with the source row. "
+            "Always guard against non-array values with jsonb_typeof() or CASE."
+        ),
+        use_cases=[
+            "Analyze individual items within a JSONB array of products/events",
+            "Flatten nested JSONB structures for reporting",
+            "Count or aggregate array elements across multiple rows",
+        ],
+        related_task_ids=[59, 76],
+    ),
+
+    # ── Array Functions (21) ──
+    SQLPattern(
+        id=21,
+        name="UNNEST & Array Aggregation",
+        category="Arrays",
+        description="Expand PostgreSQL arrays into rows with UNNEST and re-aggregate with array_agg.",
+        template_sql=(
+            "-- Expand array to rows\n"
+            "SELECT UNNEST(array_col) AS element\n"
+            "FROM -- your_table;\n\n"
+            "-- Aggregate back to array\n"
+            "SELECT group_col, array_agg(value_col ORDER BY value_col)\n"
+            "FROM -- your_table\n"
+            "GROUP BY group_col;"
+        ),
+        example_sql=(
+            "SELECT tag, COUNT(*) AS user_count\n"
+            "FROM (\n"
+            "    SELECT UNNEST(tags) AS tag\n"
+            "    FROM user_profiles\n"
+            ") t\n"
+            "GROUP BY tag\n"
+            "ORDER BY user_count DESC;"
+        ),
+        explanation=(
+            "UNNEST() expands an array column into a set of rows, one per element. This is essential "
+            "for per-element analysis of array data. array_agg() does the reverse — it aggregates "
+            "rows back into an array. Use ANY(array) for membership checks: WHERE 'val' = ANY(arr). "
+            "The @> operator checks array containment: ARRAY[1,2] @> ARRAY[1]."
+        ),
+        use_cases=[
+            "Count frequency of tags, skills, or categories stored in arrays",
+            "Find users/items that share common array elements",
+            "Reconstruct arrays after filtering individual elements",
+        ],
+        related_task_ids=[62, 63],
+    ),
+
+    # ── Deduplication (22) ──
+    SQLPattern(
+        id=22,
+        name="DISTINCT ON",
+        category="Deduplication",
+        description="PostgreSQL's DISTINCT ON returns the first row per group based on ORDER BY, without needing window functions.",
+        template_sql=(
+            "SELECT DISTINCT ON (group_col)\n"
+            "    group_col, value_col, date_col\n"
+            "FROM -- your_table\n"
+            "ORDER BY group_col, date_col DESC;"
+        ),
+        example_sql=(
+            "SELECT DISTINCT ON (customer_id)\n"
+            "    customer_id, product_id, total, ordered_at\n"
+            "FROM orders\n"
+            "ORDER BY customer_id, ordered_at DESC;"
+        ),
+        explanation=(
+            "DISTINCT ON is a PostgreSQL extension that returns only the first row for each unique "
+            "value of the specified columns. The ORDER BY determines which row is 'first'. It's much "
+            "simpler than the ROW_NUMBER() + WHERE rn = 1 pattern for 'latest per group' queries. "
+            "Note: the DISTINCT ON columns must match the leftmost ORDER BY columns."
+        ),
+        use_cases=[
+            "Get the most recent order per customer",
+            "Find the latest login per user",
+            "Deduplicate rows keeping the first/last occurrence",
+        ],
+        related_task_ids=[64, 65, 66],
+    ),
+
+    # ── Percentile (23) ──
+    SQLPattern(
+        id=23,
+        name="PERCENTILE_CONT / Median",
+        category="Statistical",
+        description="Calculate percentiles and medians using PostgreSQL's ordered-set aggregate functions.",
+        template_sql=(
+            "SELECT\n"
+            "    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY value_col) AS median,\n"
+            "    PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY value_col) AS p25,\n"
+            "    PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY value_col) AS p75\n"
+            "FROM -- your_table;"
+        ),
+        example_sql=(
+            "SELECT\n"
+            "    department_id,\n"
+            "    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY salary) AS median_salary\n"
+            "FROM employees\n"
+            "GROUP BY department_id\n"
+            "ORDER BY department_id;"
+        ),
+        explanation=(
+            "PERCENTILE_CONT(fraction) WITHIN GROUP (ORDER BY col) is an ordered-set aggregate that "
+            "computes an interpolated percentile. 0.5 gives the median. PERCENTILE_DISC returns an "
+            "actual value from the dataset instead of interpolating. These are more accurate than "
+            "approximations using NTILE or ROW_NUMBER. Can be used with GROUP BY for per-group percentiles."
+        ),
+        use_cases=[
+            "Calculate median salary, response time, or satisfaction score",
+            "Compute quartiles (P25, P50, P75) for distribution analysis",
+            "Find outliers using IQR (P75 - P25)",
+        ],
+        related_task_ids=[73, 74],
+    ),
+
+    # ── Gap & Island (24) ──
+    SQLPattern(
+        id=24,
+        name="Gap & Island Detection",
+        category="Time Series",
+        description="Identify consecutive sequences (islands) and gaps in sequential or time-series data using the ROW_NUMBER subtraction technique.",
+        template_sql=(
+            "WITH islands AS (\n"
+            "    SELECT *,\n"
+            "        value_col - ROW_NUMBER() OVER (ORDER BY value_col) AS grp\n"
+            "    FROM -- your_table\n"
+            ")\n"
+            "SELECT MIN(value_col) AS island_start,\n"
+            "    MAX(value_col) AS island_end,\n"
+            "    COUNT(*) AS island_length\n"
+            "FROM islands\n"
+            "GROUP BY grp\n"
+            "ORDER BY island_start;"
+        ),
+        example_sql=(
+            "WITH daily AS (\n"
+            "    SELECT DISTINCT recorded_at::DATE AS day,\n"
+            "        recorded_at::DATE - (ROW_NUMBER() OVER (ORDER BY recorded_at::DATE))::INT\n"
+            "            * INTERVAL '1 day' AS grp\n"
+            "    FROM sensor_readings\n"
+            "    WHERE sensor_id = 'S001' AND NOT is_anomaly\n"
+            ")\n"
+            "SELECT MIN(day) AS streak_start, MAX(day) AS streak_end,\n"
+            "    COUNT(*) AS streak_days\n"
+            "FROM daily\n"
+            "GROUP BY grp\n"
+            "ORDER BY streak_start;"
+        ),
+        explanation=(
+            "The gap-and-island technique subtracts ROW_NUMBER from each sequential value. "
+            "Consecutive values produce the same difference (grouping key), while gaps break the pattern. "
+            "For dates, subtract ROW_NUMBER * INTERVAL '1 day'. Group by the computed key to find "
+            "each island's start, end, and length. PARTITION BY allows per-group islands."
+        ),
+        use_cases=[
+            "Find consecutive days a user was active (streak detection)",
+            "Identify gaps in sequence numbers (missing data)",
+            "Detect continuous sensor reading periods vs outages",
+        ],
+        related_task_ids=[67, 68, 69],
+    ),
+
+    # ── Recursive CTE (25) ──
+    SQLPattern(
+        id=25,
+        name="Recursive CTE for Hierarchies",
+        category="Recursion",
+        description="Traverse tree structures (org charts, category trees) using recursive Common Table Expressions.",
+        template_sql=(
+            "WITH RECURSIVE tree AS (\n"
+            "    -- Anchor: root nodes\n"
+            "    SELECT id, name, parent_id, 0 AS depth,\n"
+            "        name::TEXT AS path\n"
+            "    FROM -- your_table\n"
+            "    WHERE parent_id IS NULL\n"
+            "    UNION ALL\n"
+            "    -- Recursive step: children\n"
+            "    SELECT c.id, c.name, c.parent_id, t.depth + 1,\n"
+            "        t.path || ' > ' || c.name\n"
+            "    FROM -- your_table c\n"
+            "    JOIN tree t ON c.parent_id = t.id\n"
+            ")\n"
+            "SELECT * FROM tree ORDER BY path;"
+        ),
+        example_sql=(
+            "WITH RECURSIVE tree AS (\n"
+            "    SELECT id, name, parent_id, 0 AS depth,\n"
+            "        name::TEXT AS full_path\n"
+            "    FROM categories\n"
+            "    WHERE parent_id IS NULL\n"
+            "    UNION ALL\n"
+            "    SELECT c.id, c.name, c.parent_id, t.depth + 1,\n"
+            "        t.full_path || ' > ' || c.name\n"
+            "    FROM categories c\n"
+            "    JOIN tree t ON c.parent_id = t.id\n"
+            ")\n"
+            "SELECT * FROM tree ORDER BY full_path;"
+        ),
+        explanation=(
+            "A recursive CTE has two parts: the anchor (base case) selects root nodes, and the "
+            "recursive step joins children to parents. Each iteration produces the next level of the "
+            "tree. The recursion stops when the step returns no new rows. Add a depth counter for "
+            "level tracking and concatenate names for breadcrumb paths. Use ARRAY to track visited "
+            "nodes and prevent infinite loops in cyclic graphs."
+        ),
+        use_cases=[
+            "Build org chart or management hierarchy queries",
+            "Generate category breadcrumbs for e-commerce navigation",
+            "Compute total descendants or rollup values in tree structures",
+        ],
+        related_task_ids=[55, 56, 57, 58],
+    ),
 ]
 
 PATTERNS_BY_ID = {p.id: p for p in PATTERNS}

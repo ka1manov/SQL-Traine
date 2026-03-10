@@ -166,3 +166,18 @@ class ValidateDDLResponse(BaseModel):
     valid: bool
     error: str | None = None
     details: str | None = None
+
+
+# Assignment Progress
+class AssignmentStepProgress(BaseModel):
+    assignment_id: int
+    step: int
+    completed: bool
+
+
+# Interview Question Progress
+class InterviewProgressEntry(BaseModel):
+    question_id: int
+    solved: bool
+    best_match_pct: float
+    attempts: int

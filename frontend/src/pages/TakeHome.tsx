@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Briefcase, ChevronRight, Play, CheckCircle2, Eye } from 'lucide-react';
 import SQLEditor from '../components/SQLEditor';
 import ResultTable from '../components/ResultTable';
-import { fetchAssignments, executeSQL, formatSQL } from '../utils/api';
+import { fetchAssignments, executeSQL, formatSQL, fetchAssignmentProgress, updateAssignmentProgress } from '../utils/api';
 import type { Assignment, ExecuteResponse, CheckResponse } from '../types';
 
 export default function TakeHome() {
@@ -15,9 +15,15 @@ export default function TakeHome() {
   const [loading, setLoading] = useState(false);
   const [showSolution, setShowSolution] = useState(false);
   const [stepsDone, setStepsDone] = useState<Set<number>>(new Set());
+  const [serverProgress, setServerProgress] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchAssignments().then(setAssignments).catch(console.error);
+    fetchAssignmentProgress().then(rows => {
+      const done = new Set<string>();
+      rows.forEach(r => { if (r.completed) done.add(`${r.assignment_id}-${r.step}`); });
+      setServerProgress(done);
+    }).catch(() => {});
   }, []);
 
   const runAndCheck = async () => {
@@ -37,6 +43,10 @@ export default function TakeHome() {
         const expectedJson = JSON.stringify(expectedRes.rows);
         if (actualJson === expectedJson) {
           setStepsDone(prev => new Set(prev).add(stepIdx));
+          if (selected) {
+            updateAssignmentProgress(selected.id, selected.steps[stepIdx].step, true).catch(() => {});
+            setServerProgress(prev => new Set(prev).add(`${selected.id}-${selected.steps[stepIdx].step}`));
+          }
           setCheckResult({ correct: true, match_pct: 100, diff: null, actual: res, expected: expectedRes, error: null });
         } else {
           setCheckResult({ correct: false, match_pct: 0, diff: null, actual: res, expected: expectedRes, error: null });
@@ -118,7 +128,12 @@ export default function TakeHome() {
       <p className="text-sm text-gray-400">Real-world SQL projects inspired by top tech companies.</p>
       <div className="space-y-3">
         {assignments.map(a => (
-          <button key={a.id} onClick={() => setSelected(a)}
+          <button key={a.id} onClick={() => {
+              setSelected(a);
+              const done = new Set<number>();
+              a.steps.forEach((s, i) => { if (serverProgress.has(`${a.id}-${s.step}`)) done.add(i); });
+              setStepsDone(done);
+            }}
             className="w-full text-left bg-dark-card dark:bg-dark-card bg-gray-50 border border-dark-border dark:border-dark-border border-gray-200 rounded-lg p-4 hover:bg-dark-hover transition-colors">
             <div className="flex items-center justify-between">
               <div>
@@ -127,7 +142,7 @@ export default function TakeHome() {
                   <span className="text-xs bg-dark-bg dark:bg-dark-bg bg-gray-200 px-2 py-0.5 rounded text-gray-500">{a.company}</span>
                 </div>
                 <p className="text-sm text-gray-400">{a.description}</p>
-                <p className="text-xs text-gray-600 mt-1">{a.steps.length} steps</p>
+                <p className="text-xs text-gray-600 mt-1">{a.steps.filter(s => serverProgress.has(`${a.id}-${s.step}`)).length}/{a.steps.length} steps completed</p>
               </div>
               <ChevronRight className="w-5 h-5 text-gray-600" />
             </div>

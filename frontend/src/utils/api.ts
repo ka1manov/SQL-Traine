@@ -227,3 +227,23 @@ export async function validateDDL(ddl: string): Promise<ValidateDDLResponse> {
   const { data } = await api.post('/schema-builder/validate', { ddl });
   return data;
 }
+
+// Assignment Progress
+export async function fetchAssignmentProgress(): Promise<{ assignment_id: number; step: number; completed: boolean }[]> {
+  const { data } = await api.get('/assignments/progress');
+  return data;
+}
+
+export async function updateAssignmentProgress(assignment_id: number, step: number, completed: boolean): Promise<void> {
+  await api.post('/assignments/progress', { assignment_id, step, completed });
+}
+
+// Interview Question Progress
+export async function fetchInterviewProgress(): Promise<{ question_id: number; solved: boolean; best_match_pct: number; attempts: number }[]> {
+  const { data } = await api.get('/interview-questions/progress');
+  return data;
+}
+
+export async function updateInterviewProgress(question_id: number, solved: boolean, best_match_pct: number, attempts: number): Promise<void> {
+  await api.post('/interview-questions/progress', { question_id, solved, best_match_pct, attempts });
+}

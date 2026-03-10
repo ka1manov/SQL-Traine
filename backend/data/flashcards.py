@@ -144,4 +144,80 @@ FLASHCARDS: list[Flashcard] = [
     Flashcard(40, "What is the difference between NOW(), CURRENT_TIMESTAMP, and CURRENT_DATE?",
                "NOW() and CURRENT_TIMESTAMP both return the current timestamp with time zone (NOW() is PG-specific). CURRENT_DATE returns the date only. Within a transaction, all return the same fixed value.",
                "Date & Time"),
+
+    # ── Recursive CTEs (41-44) ──
+    Flashcard(41, "What is a recursive CTE and what are its two parts?",
+               "A recursive CTE uses WITH RECURSIVE and has two parts joined by UNION ALL: the anchor (base case) that provides starting rows, and the recursive step that references the CTE itself. Execution stops when the recursive step returns no new rows.",
+               "Recursive CTEs"),
+    Flashcard(42, "How do you traverse a tree/hierarchy using SQL?",
+               "Use a recursive CTE: the anchor selects root nodes (WHERE parent_id IS NULL), the recursive step joins children to parents. Add a depth counter and path string at each level for full hierarchy context.",
+               "Recursive CTEs"),
+    Flashcard(43, "How do you detect cycles in a recursive CTE?",
+               "Track visited node IDs in an array column (path_ids || node.id) and add WHERE NOT node.id = ANY(cte.path_ids) to the recursive step. PostgreSQL 14+ also has a built-in CYCLE clause.",
+               "Recursive CTEs"),
+
+    # ── JSONB (44-47) ──
+    Flashcard(44, "What is the difference between -> and ->> in PostgreSQL JSONB?",
+               "-> returns the value as JSONB (preserving type for further chaining), while ->> returns the value as plain TEXT. Use -> for nested access (col->'a'->'b'), ->> for final value extraction.",
+               "JSONB"),
+    Flashcard(45, "What does the @> operator do with JSONB?",
+               "The @> containment operator checks if the left JSONB value contains the right value. Example: settings @> '{\"theme\": \"dark\"}' is TRUE if settings has that key-value pair. It's index-friendly with GIN indexes.",
+               "JSONB"),
+    Flashcard(46, "How do you expand a JSONB array into rows?",
+               "Use jsonb_array_elements(col->'array_key') to expand a JSONB array into one row per element. Use jsonb_array_elements_text() to get TEXT values instead of JSONB. Combine with LATERAL JOIN or a subquery.",
+               "JSONB"),
+    Flashcard(47, "What index type should you use for JSONB columns?",
+               "GIN (Generalized Inverted Index) is the standard choice. It supports @>, ?, ?|, and ?& operators. Create with: CREATE INDEX ON table USING GIN (jsonb_col). For specific key lookups, use a btree index on (col->>'key').",
+               "JSONB"),
+
+    # ── Arrays (48-49) ──
+    Flashcard(48, "What does UNNEST() do in PostgreSQL?",
+               "UNNEST(array) expands an array into a set of rows, one row per element. Essential for querying individual array values: SELECT UNNEST(tags) FROM users. Combine with GROUP BY for per-element aggregation.",
+               "Arrays"),
+    Flashcard(49, "How do you check if a value exists in a PostgreSQL array?",
+               "Use the ANY operator: WHERE 'value' = ANY(array_col). For array containment, use @>: WHERE array_col @> ARRAY['value']. The && operator checks for overlap (any element in common).",
+               "Arrays"),
+
+    # ── DISTINCT ON (50-51) ──
+    Flashcard(50, "What is DISTINCT ON in PostgreSQL?",
+               "DISTINCT ON (col) returns only the first row for each unique value of col, based on the ORDER BY clause. Example: SELECT DISTINCT ON (department_id) * FROM employees ORDER BY department_id, salary DESC; returns the highest-paid employee per department.",
+               "Deduplication"),
+    Flashcard(51, "How does DISTINCT ON differ from GROUP BY?",
+               "GROUP BY collapses rows and requires aggregate functions for non-grouped columns. DISTINCT ON keeps the full row and uses ORDER BY to determine which row to keep. DISTINCT ON is PostgreSQL-specific and often simpler for 'first per group' queries.",
+               "Deduplication"),
+
+    # ── PERCENTILE_CONT (52-53) ──
+    Flashcard(52, "How do you calculate the median in PostgreSQL?",
+               "Use PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY col) — this is an ordered-set aggregate that computes the 50th percentile. Unlike AVG, the median is resistant to outliers.",
+               "Median & Percentile"),
+    Flashcard(53, "What is the difference between PERCENTILE_CONT and PERCENTILE_DISC?",
+               "PERCENTILE_CONT interpolates between values (returns a continuous result). PERCENTILE_DISC returns an actual value from the dataset (the first value whose cumulative distribution >= the percentile). CONT may return values not in the data.",
+               "Median & Percentile"),
+
+    # ── Gap & Island (54-55) ──
+    Flashcard(54, "What is the gap-and-island problem?",
+               "Identifying consecutive groups (islands) and missing values (gaps) in sequential data. The classic technique: subtract ROW_NUMBER() from the value — consecutive values produce the same difference, creating a grouping key.",
+               "Gap & Island"),
+    Flashcard(55, "How do you detect islands in a date sequence?",
+               "Subtract ROW_NUMBER() * INTERVAL '1 day' from each date. Consecutive dates produce the same base date. Group by this computed value to identify each island (start, end, length).",
+               "Gap & Island"),
+
+    # ── COUNT FILTER (56-57) ──
+    Flashcard(56, "What does COUNT(*) FILTER (WHERE ...) do in PostgreSQL?",
+               "FILTER is a PostgreSQL-specific clause that restricts an aggregate to only rows matching a condition. COUNT(*) FILTER (WHERE status = 'active') counts only active rows. Cleaner than CASE WHEN and works with any aggregate (SUM, AVG, etc.).",
+               "Aggregation"),
+    Flashcard(57, "How does FILTER compare to CASE in aggregate functions?",
+               "FILTER (WHERE cond) is PostgreSQL-specific and equivalent to SUM(CASE WHEN cond THEN val END). FILTER is more readable, less error-prone (no ELSE NULL ambiguity), and can be slightly faster. Use CASE for cross-database compatibility.",
+               "Aggregation"),
+
+    # ── Sessionization (58-60) ──
+    Flashcard(58, "What is sessionization in SQL?",
+               "Grouping a stream of timestamped events into sessions based on time gaps. If consecutive events are more than N minutes apart, a new session starts. Uses LAG() to compute gaps, CASE to flag boundaries, and cumulative SUM() for session IDs.",
+               "Sessionization"),
+    Flashcard(59, "How do you extract values from JSONB in aggregate queries?",
+               "Cast with ->> and ::TYPE: SUM((event_data->>'amount')::NUMERIC). The ->> extracts as text, then cast to the needed type. Always handle NULLs since ->> returns NULL for missing keys.",
+               "JSONB"),
+    Flashcard(60, "What does EXTRACT(EPOCH FROM interval) return?",
+               "It returns the total number of seconds in an interval. Commonly used to convert timestamp differences to numeric durations: EXTRACT(EPOCH FROM end_time - start_time) gives duration in seconds.",
+               "Date & Time"),
 ]

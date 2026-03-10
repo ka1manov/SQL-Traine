@@ -2200,12 +2200,380 @@ ORDER BY engagement_score DESC;\
 )
 
 
+# ============================================================
+# 51-54: Sessionization (Uber, Netflix)
+# ============================================================
+
+q51 = InterviewQuestion(
+    id=51,
+    title="Session Duration from Event Log",
+    description=(
+        "For each session in the event_log table, calculate the number of events, "
+        "session start time, session end time, and duration in seconds. "
+        "Return session_id, user_id, event_count, session_start, session_end, duration_seconds. "
+        "Order by session_start."
+    ),
+    company_tags=["Uber", "Netflix"],
+    pattern="Sessionization",
+    difficulty="medium",
+    tables=["event_log"],
+    solution_sql="""\
+SELECT session_id, user_id, COUNT(*) AS event_count,
+    MIN(created_at) AS session_start, MAX(created_at) AS session_end,
+    EXTRACT(EPOCH FROM MAX(created_at) - MIN(created_at)) AS duration_seconds
+FROM event_log
+GROUP BY session_id, user_id
+ORDER BY session_start;\
+""",
+    hint="GROUP BY session_id and user_id, use MIN/MAX for timestamps and EXTRACT(EPOCH FROM ...) for duration.",
+    explanation="Grouping by session_id treats each session as a unit. MIN/MAX give first and last event timestamps. EXTRACT(EPOCH FROM interval) converts the time difference to seconds.",
+)
+
+q52 = InterviewQuestion(
+    id=52,
+    title="Purchase Sessions with Page Views",
+    description=(
+        "Find sessions that contain at least one purchase event. For each, show session_id, user_id, "
+        "total purchase amount (from event_data JSONB), number of page_view events, and session duration "
+        "in seconds. Order by session_id."
+    ),
+    company_tags=["Netflix", "Spotify"],
+    pattern="Sessionization",
+    difficulty="hard",
+    tables=["event_log"],
+    solution_sql="""\
+WITH purchases AS (
+    SELECT session_id, user_id,
+        SUM((event_data->>'amount')::NUMERIC) AS total_purchase_amount
+    FROM event_log WHERE event_type = 'purchase'
+    GROUP BY session_id, user_id
+),
+session_stats AS (
+    SELECT session_id, user_id,
+        COUNT(*) FILTER (WHERE event_type = 'page_view') AS page_views_count,
+        EXTRACT(EPOCH FROM MAX(created_at) - MIN(created_at)) AS duration_seconds
+    FROM event_log GROUP BY session_id, user_id
+)
+SELECT s.session_id, s.user_id, p.total_purchase_amount,
+    s.page_views_count, s.duration_seconds
+FROM session_stats s
+JOIN purchases p ON s.session_id = p.session_id AND s.user_id = p.user_id
+ORDER BY s.session_id;\
+""",
+    hint="Use one CTE for purchase amounts (extract from JSONB), another for session stats with COUNT FILTER, then JOIN.",
+    explanation="Combines JSONB extraction, FILTER aggregation, and sessionization. The JOIN naturally filters to purchase sessions only.",
+)
+
+q53 = InterviewQuestion(
+    id=53,
+    title="Average Session Length by User",
+    description=(
+        "Calculate each user's average session duration in seconds and total number of sessions. "
+        "Only include sessions with at least 2 events. "
+        "Return user_id, session_count, avg_duration_seconds. Order by avg_duration_seconds DESC."
+    ),
+    company_tags=["Uber", "Airbnb"],
+    pattern="Sessionization",
+    difficulty="medium",
+    tables=["event_log"],
+    solution_sql="""\
+WITH sessions AS (
+    SELECT user_id, session_id,
+        EXTRACT(EPOCH FROM MAX(created_at) - MIN(created_at)) AS duration_seconds,
+        COUNT(*) AS event_count
+    FROM event_log
+    GROUP BY user_id, session_id
+    HAVING COUNT(*) >= 2
+)
+SELECT user_id, COUNT(*) AS session_count,
+    ROUND(AVG(duration_seconds)::NUMERIC, 2) AS avg_duration_seconds
+FROM sessions
+GROUP BY user_id
+ORDER BY avg_duration_seconds DESC;\
+""",
+    hint="First compute per-session duration with HAVING >= 2 events, then aggregate per user.",
+    explanation="The CTE computes duration per session, filtering to multi-event sessions. The outer query averages these durations per user.",
+)
+
+# ============================================================
+# 54-56: JSONB Extraction (Stripe, Airbnb)
+# ============================================================
+
+q54 = InterviewQuestion(
+    id=54,
+    title="Extract User Settings from JSONB",
+    description=(
+        "From user_profiles, extract the theme and notifications settings from the JSONB settings column. "
+        "Return username, theme, and notifications_enabled. Only include users where settings is not null. "
+        "Order by username."
+    ),
+    company_tags=["Stripe", "Airbnb"],
+    pattern="JSONB extraction",
+    difficulty="easy",
+    tables=["user_profiles"],
+    solution_sql="""\
+SELECT username,
+    settings->>'theme' AS theme,
+    (settings->>'notifications')::BOOLEAN AS notifications_enabled
+FROM user_profiles
+WHERE settings IS NOT NULL
+ORDER BY username;\
+""",
+    hint="Use ->> to extract JSONB values as text, and cast to BOOLEAN where needed.",
+    explanation="The ->> operator extracts values as text. Casting to BOOLEAN converts 'true'/'false' strings to proper boolean values.",
+)
+
+q55 = InterviewQuestion(
+    id=55,
+    title="Tag Frequency Analysis",
+    description=(
+        "From user_profiles, unnest the tags array and count how many users have each tag. "
+        "Return tag and user_count. Order by user_count DESC, tag ASC."
+    ),
+    company_tags=["Airbnb", "Stripe"],
+    pattern="JSONB extraction",
+    difficulty="easy",
+    tables=["user_profiles"],
+    solution_sql="""\
+SELECT UNNEST(tags) AS tag, COUNT(*) AS user_count
+FROM user_profiles
+WHERE tags IS NOT NULL
+GROUP BY tag
+ORDER BY user_count DESC, tag ASC;\
+""",
+    hint="UNNEST expands the array into rows, then GROUP BY the unnested value.",
+    explanation="UNNEST(tags) creates one row per tag per user. GROUP BY tag counts how many users have each tag.",
+)
+
+q56 = InterviewQuestion(
+    id=56,
+    title="JSONB Event Data Aggregation",
+    description=(
+        "From event_log, for each event_type, calculate the count and the average value of the "
+        "'amount' field in event_data (only for events that have an amount). "
+        "Return event_type, event_count, and avg_amount. Order by event_count DESC."
+    ),
+    company_tags=["Stripe", "Square"],
+    pattern="JSONB extraction",
+    difficulty="medium",
+    tables=["event_log"],
+    solution_sql="""\
+SELECT event_type,
+    COUNT(*) AS event_count,
+    ROUND(AVG((event_data->>'amount')::NUMERIC), 2) AS avg_amount
+FROM event_log
+WHERE event_data->>'amount' IS NOT NULL
+GROUP BY event_type
+ORDER BY event_count DESC;\
+""",
+    hint="Extract amount with ->>, cast to NUMERIC, and use AVG. Filter where amount key exists.",
+    explanation="The ->> operator extracts amount as text, which is cast to NUMERIC for aggregation. NULL is returned for events without the amount key, filtered by WHERE.",
+)
+
+# ============================================================
+# 57-59: Gap & Island (Google, Amazon)
+# ============================================================
+
+q57 = InterviewQuestion(
+    id=57,
+    title="Find Missing Sequence Numbers",
+    description=(
+        "In the event_log table, find all missing seq_num values per user_id within each session. "
+        "A missing seq_num is a gap between the minimum and maximum seq_num for that user+session. "
+        "Return user_id, session_id, and missing_seq_num. Order by user_id, session_id, missing_seq_num."
+    ),
+    company_tags=["Google", "Amazon"],
+    pattern="Gap & Island",
+    difficulty="hard",
+    tables=["event_log"],
+    solution_sql="""\
+WITH bounds AS (
+    SELECT user_id, session_id, MIN(seq_num) AS min_seq, MAX(seq_num) AS max_seq
+    FROM event_log GROUP BY user_id, session_id
+),
+all_seqs AS (
+    SELECT b.user_id, b.session_id, g.n AS expected_seq
+    FROM bounds b
+    CROSS JOIN LATERAL generate_series(b.min_seq, b.max_seq) AS g(n)
+)
+SELECT a.user_id, a.session_id, a.expected_seq AS missing_seq_num
+FROM all_seqs a
+LEFT JOIN event_log e ON a.user_id = e.user_id AND a.session_id = e.session_id AND a.expected_seq = e.seq_num
+WHERE e.seq_num IS NULL
+ORDER BY a.user_id, a.session_id, a.expected_seq;\
+""",
+    hint="Generate the full expected sequence with generate_series between MIN and MAX seq_num, then LEFT JOIN to find gaps.",
+    explanation="generate_series creates all expected sequence numbers. LEFT JOIN with the actual data reveals gaps where no matching row exists (e.seq_num IS NULL).",
+)
+
+q58 = InterviewQuestion(
+    id=58,
+    title="Consecutive Active Subscription Months",
+    description=(
+        "Find the longest streak of consecutive months where each customer had an active subscription. "
+        "Return customer_id and longest_streak (number of months). Order by longest_streak DESC, customer_id."
+    ),
+    company_tags=["Amazon", "Google"],
+    pattern="Gap & Island",
+    difficulty="hard",
+    tables=["subscriptions"],
+    solution_sql="""\
+WITH months AS (
+    SELECT customer_id,
+        generate_series(
+            DATE_TRUNC('month', started_at)::DATE,
+            DATE_TRUNC('month', COALESCE(ended_at, CURRENT_DATE))::DATE,
+            '1 month'::INTERVAL
+        )::DATE AS active_month
+    FROM subscriptions
+),
+distinct_months AS (
+    SELECT DISTINCT customer_id, active_month FROM months
+),
+islands AS (
+    SELECT customer_id, active_month,
+        active_month - (ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY active_month) * INTERVAL '1 month')::DATE AS grp
+    FROM distinct_months
+)
+SELECT customer_id, MAX(streak) AS longest_streak
+FROM (
+    SELECT customer_id, grp, COUNT(*) AS streak
+    FROM islands GROUP BY customer_id, grp
+) t
+GROUP BY customer_id
+ORDER BY longest_streak DESC, customer_id;\
+""",
+    hint="Expand subscriptions into active months with generate_series, then use the gap-and-island technique with ROW_NUMBER.",
+    explanation="generate_series expands each subscription into its active months. The gap-and-island technique groups consecutive months, and we take the longest streak per customer.",
+)
+
+q59 = InterviewQuestion(
+    id=59,
+    title="Anomaly Streaks in Sensor Data",
+    description=(
+        "Find consecutive streaks of anomalous readings per sensor. Return sensor_id, streak_start, "
+        "streak_end, and anomaly_count. Only include streaks with 2+ consecutive anomalies. "
+        "Order by sensor_id, streak_start."
+    ),
+    company_tags=["Google", "Tesla"],
+    pattern="Gap & Island",
+    difficulty="hard",
+    tables=["sensor_readings"],
+    solution_sql="""\
+WITH anomalies AS (
+    SELECT *, ROW_NUMBER() OVER (PARTITION BY sensor_id ORDER BY recorded_at) AS rn,
+        ROW_NUMBER() OVER (PARTITION BY sensor_id, is_anomaly ORDER BY recorded_at) AS rn2
+    FROM sensor_readings
+),
+streaks AS (
+    SELECT sensor_id, rn - rn2 AS grp,
+        MIN(recorded_at) AS streak_start, MAX(recorded_at) AS streak_end,
+        COUNT(*) AS anomaly_count
+    FROM anomalies WHERE is_anomaly = TRUE
+    GROUP BY sensor_id, grp
+    HAVING COUNT(*) >= 2
+)
+SELECT sensor_id, streak_start, streak_end, anomaly_count
+FROM streaks ORDER BY sensor_id, streak_start;\
+""",
+    hint="Use dual ROW_NUMBER (overall vs within anomaly flag) — the difference identifies consecutive groups.",
+    explanation="Two ROW_NUMBERs: one for all rows, one for only anomalous rows. The difference between them is constant for consecutive anomalies, creating a grouping key.",
+)
+
+# ============================================================
+# 60-62: Recursive Hierarchies (LinkedIn, Meta)
+# ============================================================
+
+q60 = InterviewQuestion(
+    id=60,
+    title="Category Breadcrumb Paths",
+    description=(
+        "Build full breadcrumb paths for all categories in the categories table. "
+        "Return id, name, depth, and full_path (e.g., 'Electronics > Computers > Laptops'). "
+        "Order by full_path."
+    ),
+    company_tags=["LinkedIn", "Meta"],
+    pattern="Recursive hierarchy",
+    difficulty="medium",
+    tables=["categories"],
+    solution_sql="""\
+WITH RECURSIVE tree AS (
+    SELECT id, name, parent_id, 0 AS depth, name::TEXT AS full_path
+    FROM categories WHERE parent_id IS NULL
+    UNION ALL
+    SELECT c.id, c.name, c.parent_id, t.depth + 1, t.full_path || ' > ' || c.name
+    FROM categories c JOIN tree t ON c.parent_id = t.id
+)
+SELECT id, name, depth, full_path FROM tree ORDER BY full_path;\
+""",
+    hint="Use a recursive CTE starting from root categories (parent_id IS NULL), concatenating names at each level.",
+    explanation="The anchor selects root categories. The recursive step joins children to parents, incrementing depth and appending to the path string.",
+)
+
+q61 = InterviewQuestion(
+    id=61,
+    title="Count Descendants per Category",
+    description=(
+        "For each root-level category (parent_id IS NULL), count the total number of descendants "
+        "(children, grandchildren, etc.). Return root category name and descendant_count. "
+        "Order by descendant_count DESC."
+    ),
+    company_tags=["Meta", "LinkedIn"],
+    pattern="Recursive hierarchy",
+    difficulty="hard",
+    tables=["categories"],
+    solution_sql="""\
+WITH RECURSIVE tree AS (
+    SELECT id, name, id AS root_id, name AS root_name
+    FROM categories WHERE parent_id IS NULL
+    UNION ALL
+    SELECT c.id, c.name, t.root_id, t.root_name
+    FROM categories c JOIN tree t ON c.parent_id = t.id
+)
+SELECT root_name, COUNT(*) - 1 AS descendant_count
+FROM tree GROUP BY root_id, root_name
+ORDER BY descendant_count DESC;\
+""",
+    hint="Recursive CTE carrying the root_id through all levels, then GROUP BY root and count (-1 to exclude the root itself).",
+    explanation="Each row in the recursive result carries its root ancestor's ID. Grouping by root and counting gives total nodes per tree. Subtract 1 to exclude the root from the descendant count.",
+)
+
+q62 = InterviewQuestion(
+    id=62,
+    title="Ticket Resolution Chain",
+    description=(
+        "Find tickets that have been reassigned (assigned_to changed). For each such ticket, "
+        "show ticket_ref, subject, priority, current assigned_to, and total number of status updates "
+        "(count of rows per ticket_ref). Order by update count DESC."
+    ),
+    company_tags=["LinkedIn", "Salesforce"],
+    pattern="Recursive hierarchy",
+    difficulty="medium",
+    tables=["tickets"],
+    solution_sql="""\
+SELECT ticket_ref, subject, priority, assigned_to,
+    COUNT(*) OVER (PARTITION BY ticket_ref) AS update_count
+FROM tickets
+QUALIFY COUNT(*) OVER (PARTITION BY ticket_ref) > 1
+ORDER BY update_count DESC, ticket_ref;\
+""",
+    hint="Use a window function to count rows per ticket_ref, then filter to those with more than one entry.",
+    explanation=(
+        "Since QUALIFY is not available in all PostgreSQL versions, an alternative uses a subquery: "
+        "SELECT * FROM (SELECT *, COUNT(*) OVER (PARTITION BY ticket_ref) AS cnt FROM tickets) t WHERE cnt > 1. "
+        "The window count identifies tickets with multiple entries."
+    ),
+)
+
+
 INTERVIEW_QUESTIONS = [
     q1, q2, q3, q4, q5, q6, q7, q8, q9, q10,
     q11, q12, q13, q14, q15, q16, q17, q18, q19, q20,
     q21, q22, q23, q24, q25, q26, q27, q28, q29, q30,
     q31, q32, q33, q34, q35, q36, q37, q38, q39, q40,
     q41, q42, q43, q44, q45, q46, q47, q48, q49, q50,
+    q51, q52, q53, q54, q55, q56, q57, q58, q59, q60,
+    q61, q62,
 ]
 
 QUESTIONS_BY_ID = {q.id: q for q in INTERVIEW_QUESTIONS}
