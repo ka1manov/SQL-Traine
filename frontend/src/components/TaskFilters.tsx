@@ -17,7 +17,7 @@ export default function TaskFilters({
       <select
         value={selectedCategory}
         onChange={e => onCategoryChange(e.target.value)}
-        className="bg-dark-card border border-dark-border rounded-lg px-3 py-1.5 text-sm text-gray-300 focus:outline-none focus:border-accent-blue"
+        className="bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-lg px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:border-accent-blue"
       >
         <option value="">All Categories</option>
         {categories.map(c => (
@@ -27,7 +27,7 @@ export default function TaskFilters({
       <select
         value={selectedDifficulty}
         onChange={e => onDifficultyChange(e.target.value)}
-        className="bg-dark-card border border-dark-border rounded-lg px-3 py-1.5 text-sm text-gray-300 focus:outline-none focus:border-accent-blue"
+        className="bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-lg px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:border-accent-blue"
       >
         {difficulties.map(d => (
           <option key={d} value={d}>{d || 'All Difficulties'}</option>

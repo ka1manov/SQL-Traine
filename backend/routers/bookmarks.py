@@ -1,21 +1,14 @@
 from fastapi import APIRouter, Request, HTTPException
 from models.schemas import BookmarkRequest
-from services.auth import get_user_id_from_token
+from services.dependencies import get_user_id, require_user_id
 from db.connection import get_pool
 
 router = APIRouter(prefix="/api", tags=["bookmarks"])
 
 
-async def _get_user_id(request: Request) -> int | None:
-    auth = request.headers.get("authorization", "")
-    if auth.startswith("Bearer "):
-        return await get_user_id_from_token(auth[7:])
-    return None
-
-
 @router.get("/bookmarks")
 async def get_bookmarks(request: Request):
-    user_id = await _get_user_id(request)
+    user_id = await get_user_id(request)
     if not user_id:
         return []
     pool = await get_pool()
@@ -29,9 +22,7 @@ async def get_bookmarks(request: Request):
 
 @router.post("/bookmarks")
 async def add_bookmark(req: BookmarkRequest, request: Request):
-    user_id = await _get_user_id(request)
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Login required")
+    user_id = await require_user_id(request)
     pool = await get_pool()
     async with pool.acquire() as conn:
         await conn.execute(
@@ -43,9 +34,7 @@ async def add_bookmark(req: BookmarkRequest, request: Request):
 
 @router.delete("/bookmarks/{task_id}")
 async def remove_bookmark(task_id: int, request: Request):
-    user_id = await _get_user_id(request)
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Login required")
+    user_id = await require_user_id(request)
     pool = await get_pool()
     async with pool.acquire() as conn:
         await conn.execute(

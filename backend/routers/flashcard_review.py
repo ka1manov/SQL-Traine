@@ -1,21 +1,14 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, HTTPException
 from models.schemas import FlashcardReview, FlashcardState
-from services.auth import get_user_id_from_token
+from services.dependencies import get_user_id, require_user_id
 from db.connection import get_pool
 
 router = APIRouter(prefix="/api", tags=["flashcards"])
 
 
-async def _get_user_id(request: Request) -> int | None:
-    auth = request.headers.get("authorization", "")
-    if auth.startswith("Bearer "):
-        return await get_user_id_from_token(auth[7:])
-    return None
-
-
 @router.get("/flashcards/progress")
 async def get_flashcard_progress(request: Request):
-    user_id = await _get_user_id(request)
+    user_id = await get_user_id(request)
     if not user_id:
         return []
     pool = await get_pool()
@@ -31,9 +24,7 @@ async def get_flashcard_progress(request: Request):
 @router.post("/flashcards/review")
 async def review_flashcard(review: FlashcardReview, request: Request):
     """SM-2 spaced repetition algorithm."""
-    user_id = await _get_user_id(request)
-    if not user_id:
-        return {"ok": False}
+    user_id = await require_user_id(request)
 
     pool = await get_pool()
     async with pool.acquire() as conn:

@@ -2,10 +2,8 @@ import { useState, useEffect } from 'react';
 import { Briefcase, ChevronRight, Play, CheckCircle2, Eye } from 'lucide-react';
 import SQLEditor from '../components/SQLEditor';
 import ResultTable from '../components/ResultTable';
-import DiffView from '../components/DiffView';
-import { fetchAssignments, executeSQL, checkTask as checkTaskApi, formatSQL } from '../utils/api';
+import { fetchAssignments, executeSQL, formatSQL } from '../utils/api';
 import type { Assignment, ExecuteResponse, CheckResponse } from '../types';
-import { useProgress } from '../hooks/useProgress';
 
 export default function TakeHome() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);

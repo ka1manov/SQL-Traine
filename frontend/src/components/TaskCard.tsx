@@ -12,7 +12,7 @@ export default function TaskCard({ task, solved, onClick }: Props) {
   return (
     <button
       onClick={onClick}
-      className="w-full text-left p-4 bg-dark-card hover:bg-dark-hover border border-dark-border rounded-lg transition-colors"
+      className="w-full text-left p-4 bg-white dark:bg-dark-card hover:bg-gray-50 dark:hover:bg-dark-hover border border-gray-200 dark:border-dark-border rounded-lg transition-colors"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
@@ -25,7 +25,7 @@ export default function TaskCard({ task, solved, onClick }: Props) {
         </div>
         <div className="flex flex-col items-end gap-1 shrink-0">
           <Badge text={task.difficulty} />
-          <span className="text-xs text-gray-600">{task.category}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-600">{task.category}</span>
         </div>
       </div>
     </button>

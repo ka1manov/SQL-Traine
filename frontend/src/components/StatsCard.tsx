@@ -7,7 +7,7 @@ interface Props {
 
 export default function StatsCard({ label, value, icon, color = 'text-accent-blue' }: Props) {
   return (
-    <div className="bg-dark-card border border-dark-border rounded-lg p-4">
+    <div className="bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-lg p-4">
       <div className="flex items-center gap-2 mb-1">
         {icon}
         <span className="text-xs text-gray-500 uppercase tracking-wider">{label}</span>

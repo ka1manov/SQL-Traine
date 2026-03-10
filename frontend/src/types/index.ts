@@ -16,6 +16,7 @@ export interface Task {
   hint: string | null;
   tables: string[];
   solution_sql?: string;
+  explanation?: string | null;
 }
 
 export interface DiffResult {
@@ -171,4 +172,35 @@ export interface TasksMeta {
   total: number;
   categories: Record<string, number[]>;
   difficulties: Record<string, number[]>;
+}
+
+export interface InterviewQuestion {
+  id: number;
+  title: string;
+  description: string;
+  company_tags: string[];
+  pattern: string;
+  difficulty: string;
+  tables: string[];
+  hint: string | null;
+  solution_sql?: string;
+  explanation?: string;
+}
+
+export interface InterviewMeta {
+  total: number;
+  companies: Record<string, number>;
+  patterns: Record<string, number>;
+}
+
+export interface SQLPattern {
+  id: number;
+  name: string;
+  category: string;
+  description: string;
+  template_sql: string;
+  example_sql: string;
+  explanation: string;
+  use_cases: string[];
+  related_task_ids: number[];
 }

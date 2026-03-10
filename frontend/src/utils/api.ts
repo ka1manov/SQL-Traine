@@ -3,7 +3,7 @@ import type {
   ExecuteResponse, Task, CheckResponse, ProgressEntry, Flashcard,
   Assignment, LearningPath, MockSession, MockResult, AuthUser,
   HistoryEntry, LeaderboardEntry, StreakData, ColumnInfo, QueryTemplate,
-  FlashcardState, TasksMeta,
+  FlashcardState, TasksMeta, InterviewQuestion, InterviewMeta, SQLPattern,
 } from '../types';
 
 const api = axios.create({ baseURL: '/api' });
@@ -180,5 +180,43 @@ export async function formatSQL(sql: string): Promise<string> {
 // Templates
 export async function fetchTemplates(): Promise<QueryTemplate[]> {
   const { data } = await api.get('/templates');
+  return data;
+}
+
+// Interview Questions
+export async function fetchInterviewQuestions(company?: string, pattern?: string, difficulty?: string): Promise<InterviewQuestion[]> {
+  const params: Record<string, string> = {};
+  if (company) params.company = company;
+  if (pattern) params.pattern = pattern;
+  if (difficulty) params.difficulty = difficulty;
+  const { data } = await api.get('/interview-questions', { params });
+  return data;
+}
+
+export async function fetchInterviewMeta(): Promise<InterviewMeta> {
+  const { data } = await api.get('/interview-questions/meta');
+  return data;
+}
+
+export async function fetchInterviewQuestion(id: number): Promise<InterviewQuestion> {
+  const { data } = await api.get(`/interview-questions/${id}`);
+  return data;
+}
+
+export async function checkInterviewQuestion(id: number, sql: string, session_id?: string): Promise<CheckResponse> {
+  const { data } = await api.post(`/interview-questions/${id}/check`, { sql, session_id });
+  return data;
+}
+
+// Patterns
+export async function fetchPatterns(category?: string): Promise<SQLPattern[]> {
+  const params: Record<string, string> = {};
+  if (category) params.category = category;
+  const { data } = await api.get('/patterns', { params });
+  return data;
+}
+
+export async function fetchPatternCategories(): Promise<string[]> {
+  const { data } = await api.get('/patterns/categories');
   return data;
 }

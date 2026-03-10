@@ -1,14 +1,19 @@
 import asyncio
+import logging
 from contextlib import asynccontextmanager
+from dataclasses import asdict
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 load_dotenv()
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+logger = logging.getLogger(__name__)
+
 from db.connection import get_pool, close_pool
 from services.sandbox import cleanup_old_sandboxes
-from routers import execute, tasks, progress, mock, daily, history, bookmarks, streaks, leaderboard, format_sql, flashcard_review, auth
+from routers import execute, tasks, progress, mock, daily, history, bookmarks, streaks, leaderboard, format_sql, flashcard_review, auth, interview, patterns
 from data.templates import TEMPLATES
 
 
@@ -17,8 +22,8 @@ async def _periodic_cleanup():
         await asyncio.sleep(3600)
         try:
             await cleanup_old_sandboxes()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error("Sandbox cleanup failed: %s", e)
 
 
 @asynccontextmanager
@@ -52,6 +57,8 @@ app.include_router(streaks.router)
 app.include_router(leaderboard.router)
 app.include_router(format_sql.router)
 app.include_router(flashcard_review.router)
+app.include_router(interview.router)
+app.include_router(patterns.router)
 
 
 @app.get("/api/health")
@@ -61,4 +68,4 @@ async def health():
 
 @app.get("/api/templates")
 async def get_templates():
-    return [t.__dict__ for t in TEMPLATES]
+    return [asdict(t) for t in TEMPLATES]

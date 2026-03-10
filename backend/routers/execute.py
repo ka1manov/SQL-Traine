@@ -1,17 +1,12 @@
+import logging
 from fastapi import APIRouter, Request
 from models.schemas import ExecuteRequest, ExecuteResponse
 from services.sandbox import create_sandbox, execute_in_sandbox
-from services.auth import get_user_id_from_token
+from services.dependencies import get_user_id
 from db.connection import get_pool
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["execute"])
-
-
-async def _get_user_id(request: Request) -> int | None:
-    auth = request.headers.get("authorization", "")
-    if auth.startswith("Bearer "):
-        return await get_user_id_from_token(auth[7:])
-    return None
 
 
 @router.post("/execute", response_model=ExecuteResponse)
@@ -20,7 +15,7 @@ async def execute_sql(req: ExecuteRequest, request: Request):
     result = await execute_in_sandbox(session_id, req.sql)
 
     # Save to history
-    user_id = await _get_user_id(request)
+    user_id = await get_user_id(request)
     if user_id:
         try:
             pool = await get_pool()
@@ -31,7 +26,7 @@ async def execute_sql(req: ExecuteRequest, request: Request):
                     user_id, req.sql, result.get("execution_time_ms", 0),
                     result.get("row_count", 0), result.get("error") is not None,
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Failed to save query history: %s", e)
 
     return ExecuteResponse(**result)

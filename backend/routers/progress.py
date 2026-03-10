@@ -1,21 +1,14 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, HTTPException
 from models.schemas import ProgressEntry
-from services.auth import get_user_id_from_token
+from services.dependencies import get_user_id, require_user_id
 from db.connection import get_pool
 
 router = APIRouter(prefix="/api", tags=["progress"])
 
 
-async def _get_user_id(request: Request) -> int | None:
-    auth = request.headers.get("authorization", "")
-    if auth.startswith("Bearer "):
-        return await get_user_id_from_token(auth[7:])
-    return None
-
-
 @router.get("/progress")
 async def get_progress(request: Request):
-    user_id = await _get_user_id(request)
+    user_id = await get_user_id(request)
     if not user_id:
         return []
     pool = await get_pool()
@@ -29,9 +22,7 @@ async def get_progress(request: Request):
 
 @router.post("/progress")
 async def update_progress(entry: ProgressEntry, request: Request):
-    user_id = await _get_user_id(request)
-    if not user_id:
-        return entry
+    user_id = await require_user_id(request)
     pool = await get_pool()
     async with pool.acquire() as conn:
         existing = await conn.fetchrow(

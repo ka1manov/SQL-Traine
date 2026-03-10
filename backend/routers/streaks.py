@@ -1,20 +1,14 @@
-from fastapi import APIRouter, Request
-from services.auth import get_user_id_from_token
+from fastapi import APIRouter, Request, HTTPException
+from models.schemas import BookmarkRequest
+from services.dependencies import get_user_id, require_user_id
 from db.connection import get_pool
 
 router = APIRouter(prefix="/api", tags=["streaks"])
 
 
-async def _get_user_id(request: Request) -> int | None:
-    auth = request.headers.get("authorization", "")
-    if auth.startswith("Bearer "):
-        return await get_user_id_from_token(auth[7:])
-    return None
-
-
 @router.get("/streaks")
 async def get_streaks(request: Request):
-    user_id = await _get_user_id(request)
+    user_id = await get_user_id(request)
     if not user_id:
         return {"current_streak": 0, "best_streak": 0, "days": []}
     pool = await get_pool()
@@ -60,16 +54,12 @@ async def get_streaks(request: Request):
 
 
 @router.post("/streaks")
-async def record_streak(request: Request):
-    user_id = await _get_user_id(request)
-    if not user_id:
-        return {"ok": False}
-    body = await request.json()
-    task_id = body.get("task_id", 0)
+async def record_streak(req: BookmarkRequest, request: Request):
+    user_id = await require_user_id(request)
     pool = await get_pool()
     async with pool.acquire() as conn:
         await conn.execute(
             "INSERT INTO daily_streaks (user_id, completed_date, task_id) VALUES ($1, CURRENT_DATE, $2) ON CONFLICT DO NOTHING",
-            user_id, task_id,
+            user_id, req.task_id,
         )
     return {"ok": True}

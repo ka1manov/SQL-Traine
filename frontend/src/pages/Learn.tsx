@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   BookOpen, ChevronRight, Code2, Lightbulb, Brain,
   Play, AlertTriangle, ArrowLeft, ChevronDown, CheckCircle2, BarChart3,
@@ -177,17 +178,17 @@ function LessonView({
           </h2>
           <div className="flex gap-2 flex-wrap">
             {step.task_ids.map(id => (
-              <a
+              <Link
                 key={id}
-                href={`/tasks?id=${id}`}
+                to={`/tasks?id=${id}`}
                 className={`text-xs px-2.5 py-1 rounded-md font-medium transition-colors ${
                   isSolved(id)
-                    ? 'bg-green-900/30 dark:bg-green-900/30 bg-green-100 text-green-400 dark:text-green-400 text-green-700'
-                    : 'bg-dark-card dark:bg-dark-card bg-gray-200 text-gray-400 dark:text-gray-400 text-gray-600 hover:bg-dark-hover dark:hover:bg-dark-hover hover:bg-gray-300'
+                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                    : 'bg-gray-200 dark:bg-dark-card text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-dark-hover'
                 }`}
               >
                 Task #{id} {isSolved(id) ? '✓' : '→'}
-              </a>
+              </Link>
             ))}
           </div>
         </section>

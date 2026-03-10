@@ -1,12 +1,12 @@
 import { useState, useEffect, useContext } from 'react';
-import { ArrowLeft, Play, Lightbulb, Eye, Bookmark, BookmarkCheck, AlignLeft } from 'lucide-react';
+import { ArrowLeft, Play, Lightbulb, Eye, Bookmark, BookmarkCheck, AlignLeft, BookOpen } from 'lucide-react';
 import SQLEditor from '../components/SQLEditor';
 import ResultTable from '../components/ResultTable';
 import DiffView from '../components/DiffView';
 import TaskCard from '../components/TaskCard';
 import TaskFilters from '../components/TaskFilters';
 import Badge from '../components/Badge';
-import { fetchTasks, checkTask, formatSQL, addBookmark, removeBookmark, fetchBookmarks } from '../utils/api';
+import { fetchTasks, fetchTask, checkTask, formatSQL, addBookmark, removeBookmark, fetchBookmarks } from '../utils/api';
 import { useProgress } from '../hooks/useProgress';
 import { AuthContext } from '../contexts/AuthContext';
 import type { Task, CheckResponse } from '../types';
@@ -21,6 +21,7 @@ export default function Tasks() {
   const [difficulty, setDifficulty] = useState('');
   const [showHint, setShowHint] = useState(false);
   const [showSolution, setShowSolution] = useState(false);
+  const [showExplanation, setShowExplanation] = useState(false);
   const [bookmarks, setBookmarks] = useState<Set<number>>(new Set());
   const { isSolved, recordAttempt, getAttempts } = useProgress();
   const auth = useContext(AuthContext);
@@ -56,12 +57,16 @@ export default function Tasks() {
   };
 
   const toggleBookmark = async (taskId: number) => {
-    if (bookmarks.has(taskId)) {
-      await removeBookmark(taskId);
-      setBookmarks(prev => { const n = new Set(prev); n.delete(taskId); return n; });
-    } else {
-      await addBookmark(taskId);
-      setBookmarks(prev => new Set(prev).add(taskId));
+    try {
+      if (bookmarks.has(taskId)) {
+        await removeBookmark(taskId);
+        setBookmarks(prev => { const n = new Set(prev); n.delete(taskId); return n; });
+      } else {
+        await addBookmark(taskId);
+        setBookmarks(prev => new Set(prev).add(taskId));
+      }
+    } catch (err) {
+      console.error('Bookmark toggle failed:', err);
     }
   };
 
@@ -70,7 +75,7 @@ export default function Tasks() {
   if (selected) {
     return (
       <div className="p-4 space-y-4 max-w-5xl">
-        <button onClick={() => { setSelected(null); setResult(null); setSql(''); setShowHint(false); setShowSolution(false); }}
+        <button onClick={() => { setSelected(null); setResult(null); setSql(''); setShowHint(false); setShowSolution(false); setShowExplanation(false); }}
           className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-200">
           <ArrowLeft className="w-4 h-4" /> Back to tasks
         </button>
@@ -115,6 +120,16 @@ export default function Tasks() {
           <div className="bg-dark-card border border-dark-border rounded-lg p-3 font-mono text-sm text-accent-blue">{selected.solution_sql}</div>
         )}
 
+        {result && selected.explanation && (
+          <button onClick={() => setShowExplanation(!showExplanation)}
+            className="flex items-center gap-1 px-3 py-1.5 text-xs bg-purple-900/20 hover:bg-purple-900/30 border border-purple-800/30 rounded-lg text-purple-400">
+            <BookOpen className="w-3.5 h-3.5" /> {showExplanation ? 'Hide' : 'Show'} Explanation
+          </button>
+        )}
+        {showExplanation && selected.explanation && (
+          <div className="bg-purple-900/10 border border-purple-800/30 rounded-lg p-3 text-purple-300 text-sm whitespace-pre-line">{selected.explanation}</div>
+        )}
+
         <SQLEditor value={sql} onChange={setSql} onRun={handleCheck} onFormat={handleFormat} height="180px" />
 
         <button onClick={handleCheck} disabled={loading}
@@ -149,7 +164,10 @@ export default function Tasks() {
       </div>
       <div className="grid gap-2">
         {tasks.map(t => (
-          <TaskCard key={t.id} task={t} solved={isSolved(t.id)} onClick={() => { setSelected(t); setSql(''); setResult(null); }} />
+          <TaskCard key={t.id} task={t} solved={isSolved(t.id)} onClick={() => {
+            setSql(''); setResult(null); setShowHint(false); setShowSolution(false); setShowExplanation(false);
+            fetchTask(t.id).then(setSelected).catch(() => setSelected(t));
+          }} />
         ))}
       </div>
       {tasks.length === 0 && <p className="text-gray-500 text-sm">No tasks found.</p>}

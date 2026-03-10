@@ -47,11 +47,11 @@ class TaskOut(BaseModel):
     difficulty: str
     hint: str | None = None
     tables: list[str]
-    solution_sql: str | None = None
 
 
 class TaskDetail(TaskOut):
-    pass
+    solution_sql: str | None = None
+    explanation: str | None = None
 
 
 class ProgressEntry(BaseModel):

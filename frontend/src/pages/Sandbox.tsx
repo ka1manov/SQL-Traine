@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Play, Trash2, AlignLeft } from 'lucide-react';
 import SQLEditor from '../components/SQLEditor';
 import ResultTable from '../components/ResultTable';
@@ -11,6 +12,14 @@ export default function Sandbox() {
   const [sql, setSql] = useState('SELECT * FROM employees LIMIT 10;');
   const [result, setResult] = useState<ExecuteResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.prefillSQL) {
+      setSql(location.state.prefillSQL);
+      window.history.replaceState({}, '');
+    }
+  }, []);
 
   const runQuery = useCallback(async () => {
     if (!sql.trim()) return;

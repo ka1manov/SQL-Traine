@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass
@@ -11,6 +11,7 @@ class Task:
     tables: list[str]
     solution_sql: str
     hint: str | None = None
+    explanation: str | None = None
 
 
 TASKS: list[Task] = [
@@ -24,6 +25,7 @@ TASKS: list[Task] = [
         tables=["employees"],
         solution_sql="SELECT * FROM employees",
         hint="Use SELECT * to get all columns.",
+        explanation="SELECT * retrieves every column from the specified table. The asterisk (*) is a wildcard that expands to all available columns in the employees table.",
     ),
     Task(
         id=2,
@@ -34,6 +36,7 @@ TASKS: list[Task] = [
         tables=["employees"],
         solution_sql="SELECT first_name, last_name FROM employees",
         hint="List specific column names after SELECT.",
+        explanation="Instead of using *, you list specific column names separated by commas after SELECT. This returns only the first_name and last_name columns, which is more efficient and explicit than fetching all columns.",
     ),
     Task(
         id=3,
@@ -44,6 +47,7 @@ TASKS: list[Task] = [
         tables=["employees"],
         solution_sql="SELECT DISTINCT department_id FROM employees",
         hint="Use DISTINCT to remove duplicates.",
+        explanation="DISTINCT eliminates duplicate rows from the result set. Since multiple employees share the same department_id, DISTINCT ensures each department_id appears only once in the output.",
     ),
 
     # ── WHERE & Filtering (4-6) ──
@@ -56,6 +60,7 @@ TASKS: list[Task] = [
         tables=["employees"],
         solution_sql="SELECT * FROM employees WHERE salary > 90000",
         hint="Use WHERE with a comparison operator.",
+        explanation="The WHERE clause filters rows based on a condition. Here, salary > 90000 uses the greater-than comparison operator to return only employees whose salary exceeds 90,000.",
     ),
     Task(
         id=5,
@@ -66,6 +71,7 @@ TASKS: list[Task] = [
         tables=["subscriptions"],
         solution_sql="SELECT * FROM subscriptions WHERE is_active = TRUE AND plan = 'premium'",
         hint="Combine conditions with AND.",
+        explanation="Multiple WHERE conditions are combined using AND, meaning both conditions must be true. The query filters for subscriptions that are both currently active (is_active = TRUE) and on the premium plan.",
     ),
     Task(
         id=6,
@@ -76,6 +82,7 @@ TASKS: list[Task] = [
         tables=["orders"],
         solution_sql="SELECT * FROM orders WHERE ordered_at > '2024-02-01' AND status = 'completed'",
         hint="Use date strings in comparisons.",
+        explanation="Dates can be compared using standard comparison operators by providing the date as a string in 'YYYY-MM-DD' format. PostgreSQL automatically casts the string to a date/timestamp for comparison. The AND operator ensures both the date and status conditions are met.",
     ),
 
     # ── JOINs (7-9) ──
@@ -88,6 +95,7 @@ TASKS: list[Task] = [
         tables=["employees", "departments"],
         solution_sql="SELECT e.first_name, e.last_name, d.name AS department_name FROM employees e JOIN departments d ON e.department_id = d.id",
         hint="JOIN employees with departments on department_id.",
+        explanation="An INNER JOIN combines rows from two tables where the ON condition matches. Here, employees are joined to departments using the foreign key relationship (department_id = d.id). Table aliases (e, d) make the query more concise.",
     ),
     Task(
         id=8,
@@ -98,6 +106,7 @@ TASKS: list[Task] = [
         tables=["orders", "customers", "products"],
         solution_sql="SELECT o.id, c.name AS customer_name, p.name AS product_name, o.total FROM orders o JOIN customers c ON o.customer_id = c.id JOIN products p ON o.product_id = p.id",
         hint="You need two JOINs here.",
+        explanation="Multiple JOINs chain together to connect three tables. Orders is joined to customers via customer_id and to products via product_id. Each JOIN adds columns from the joined table, building a comprehensive view of order details.",
     ),
     Task(
         id=9,
@@ -108,6 +117,7 @@ TASKS: list[Task] = [
         tables=["invoices", "orders", "customers"],
         solution_sql="SELECT i.order_id, c.name AS customer_name, i.amount FROM invoices i JOIN orders o ON i.order_id = o.id JOIN customers c ON o.customer_id = c.id WHERE i.paid = FALSE",
         hint="Join invoices → orders → customers, filter by paid = FALSE.",
+        explanation="This query chains two JOINs: invoices to orders (via order_id), then orders to customers (via customer_id). The WHERE clause filters to only unpaid invoices. The join chain traverses the relationship path from invoices through orders to reach customer names.",
     ),
 
     # ── Aggregation (10-12) ──
@@ -120,6 +130,7 @@ TASKS: list[Task] = [
         tables=["employees", "departments"],
         solution_sql="SELECT d.name, ROUND(AVG(e.salary), 2) AS avg_salary, COUNT(*) AS emp_count FROM employees e JOIN departments d ON e.department_id = d.id GROUP BY d.name",
         hint="Use GROUP BY with AVG() and COUNT().",
+        explanation="GROUP BY collapses rows with the same department name into groups. AVG() computes the mean salary within each group, and COUNT(*) counts the number of employees. ROUND(..., 2) limits the average to 2 decimal places for readability.",
     ),
     Task(
         id=11,
@@ -130,6 +141,7 @@ TASKS: list[Task] = [
         tables=["orders", "customers"],
         solution_sql="SELECT c.name, SUM(o.total) AS total_spent FROM orders o JOIN customers c ON o.customer_id = c.id GROUP BY c.name ORDER BY total_spent DESC",
         hint="SUM the order totals, GROUP BY customer.",
+        explanation="SUM() adds up all order totals for each customer group. GROUP BY c.name ensures one row per customer. ORDER BY total_spent DESC sorts the results so the highest spender appears first.",
     ),
     Task(
         id=12,
@@ -140,6 +152,7 @@ TASKS: list[Task] = [
         tables=["streams"],
         solution_sql="SELECT genre, COUNT(*) AS stream_count, ROUND(SUM(duration_sec) / 60.0, 1) AS total_minutes FROM streams GROUP BY genre",
         hint="GROUP BY genre, use COUNT and SUM.",
+        explanation="GROUP BY genre creates one row per genre. COUNT(*) tallies the number of streams, while SUM(duration_sec) / 60.0 converts the total duration from seconds to minutes. Dividing by 60.0 (not 60) ensures decimal precision.",
     ),
 
     # ── Subqueries (13-15) ──
@@ -152,6 +165,7 @@ TASKS: list[Task] = [
         tables=["employees"],
         solution_sql="SELECT * FROM employees WHERE salary > (SELECT AVG(salary) FROM employees)",
         hint="Use a subquery to calculate the average.",
+        explanation="The subquery (SELECT AVG(salary) FROM employees) computes a single scalar value -- the company-wide average salary. The outer query then uses this value in the WHERE clause to filter employees earning above that average. This is a non-correlated subquery since it runs independently.",
     ),
     Task(
         id=14,
@@ -162,6 +176,7 @@ TASKS: list[Task] = [
         tables=["customers", "orders"],
         solution_sql="SELECT * FROM customers WHERE id NOT IN (SELECT DISTINCT customer_id FROM orders)",
         hint="Use NOT IN with a subquery on orders.",
+        explanation="The subquery collects all customer_id values that appear in orders. NOT IN then excludes those IDs from the customers result. DISTINCT is used in the subquery for efficiency, though NOT IN would work without it as well.",
     ),
     Task(
         id=15,
@@ -172,6 +187,7 @@ TASKS: list[Task] = [
         tables=["orders", "customers"],
         solution_sql="SELECT c.name, (SELECT MAX(o.total) FROM orders o WHERE o.customer_id = c.id) AS max_order FROM customers c",
         hint="Use a correlated subquery with MAX().",
+        explanation="This is a correlated subquery -- it references c.id from the outer query, so it re-executes for each customer. For each customer row, the subquery finds the MAX(total) from their orders. Customers with no orders will get NULL.",
     ),
 
     # ── Window Functions (16-18) ──
@@ -184,6 +200,7 @@ TASKS: list[Task] = [
         tables=["employees", "departments"],
         solution_sql="SELECT e.first_name, e.last_name, d.name AS department, e.salary, RANK() OVER (PARTITION BY e.department_id ORDER BY e.salary DESC) AS salary_rank FROM employees e JOIN departments d ON e.department_id = d.id",
         hint="Use RANK() with PARTITION BY department.",
+        explanation="RANK() assigns a ranking number to each row within its partition. PARTITION BY e.department_id restarts the ranking for each department, and ORDER BY e.salary DESC ranks highest salary as 1. Tied salaries receive the same rank, with the next rank skipped.",
     ),
     Task(
         id=17,
@@ -194,6 +211,7 @@ TASKS: list[Task] = [
         tables=["orders"],
         solution_sql="SELECT id, ordered_at, total, SUM(total) OVER (ORDER BY ordered_at) AS running_total FROM orders",
         hint="Use SUM() OVER with ORDER BY.",
+        explanation="SUM() as a window function with ORDER BY computes a cumulative (running) total. For each row, it sums all totals from the first row up to and including the current row, ordered by date. No PARTITION BY means the running total spans the entire result set.",
     ),
     Task(
         id=18,
@@ -204,6 +222,7 @@ TASKS: list[Task] = [
         tables=["streams"],
         solution_sql="SELECT user_id, song, streamed_at, LAG(song) OVER (PARTITION BY user_id ORDER BY streamed_at) AS prev_song, EXTRACT(EPOCH FROM streamed_at - LAG(streamed_at) OVER (PARTITION BY user_id ORDER BY streamed_at)) AS gap_seconds FROM streams",
         hint="Use LAG() partitioned by user_id.",
+        explanation="LAG() accesses the previous row's value within the same partition. PARTITION BY user_id groups streams per user, and ORDER BY streamed_at establishes chronological order. The time gap is calculated by subtracting the lagged timestamp, and EXTRACT(EPOCH FROM ...) converts the interval to seconds.",
     ),
 
     # ── CTEs (19-21) ──
@@ -216,6 +235,7 @@ TASKS: list[Task] = [
         tables=["departments", "employees"],
         solution_sql="WITH dept_costs AS (SELECT department_id, SUM(salary) AS total_salary FROM employees GROUP BY department_id) SELECT d.name, d.budget, dc.total_salary, d.budget - dc.total_salary AS remaining FROM departments d JOIN dept_costs dc ON d.id = dc.department_id",
         hint="Define a CTE with total salary per department, then join.",
+        explanation="The WITH clause defines a CTE (Common Table Expression) named dept_costs that pre-computes total salary per department. The main query then joins departments to this CTE, making the logic cleaner and more readable than nesting subqueries. The remaining budget is a simple subtraction.",
     ),
     Task(
         id=20,
@@ -226,6 +246,7 @@ TASKS: list[Task] = [
         tables=["bookings"],
         solution_sql="WITH revenue AS (SELECT city, SUM((check_out - check_in) * price_per_night) AS total_revenue FROM bookings GROUP BY city) SELECT * FROM revenue ORDER BY total_revenue DESC",
         hint="Calculate nights as check_out - check_in.",
+        explanation="The CTE calculates revenue per city by multiplying the number of nights (check_out - check_in gives an integer in PostgreSQL for date columns) by the price_per_night, then summing across all bookings. The main query simply selects from the CTE and orders by revenue descending.",
     ),
     Task(
         id=21,
@@ -236,6 +257,7 @@ TASKS: list[Task] = [
         tables=["customers", "orders", "subscriptions"],
         solution_sql="WITH order_stats AS (SELECT customer_id, COUNT(*) AS order_count, SUM(total) AS total_spent FROM orders GROUP BY customer_id) SELECT c.name, os.order_count, os.total_spent, s.plan FROM customers c LEFT JOIN order_stats os ON c.id = os.customer_id LEFT JOIN subscriptions s ON c.id = s.customer_id AND s.is_active = TRUE",
         hint="Use LEFT JOINs to include customers with no orders.",
+        explanation="The CTE aggregates order statistics per customer. LEFT JOINs ensure all customers appear in the result even if they have no orders or no active subscription. The subscription join includes an extra condition (is_active = TRUE) directly in the ON clause to only match active plans.",
     ),
 
     # ── CASE & Conditional (22-24) ──
@@ -248,6 +270,7 @@ TASKS: list[Task] = [
         tables=["employees"],
         solution_sql="SELECT first_name, last_name, salary, CASE WHEN salary < 70000 THEN 'Junior' WHEN salary <= 95000 THEN 'Mid' ELSE 'Senior' END AS tier FROM employees",
         hint="Use CASE WHEN with salary ranges.",
+        explanation="CASE WHEN evaluates conditions in order and returns the first matching result. The conditions create non-overlapping salary ranges: below 70k maps to Junior, 70k-95k to Mid, and everything else (above 95k) falls through to the ELSE as Senior.",
     ),
     Task(
         id=23,
@@ -258,6 +281,7 @@ TASKS: list[Task] = [
         tables=["orders"],
         solution_sql="SELECT COUNT(CASE WHEN status = 'completed' THEN 1 END) AS completed_count, COUNT(CASE WHEN status = 'pending' THEN 1 END) AS pending_count, COUNT(CASE WHEN status = 'shipped' THEN 1 END) AS shipped_count FROM orders",
         hint="Use COUNT with CASE inside.",
+        explanation="This is a pivot technique using conditional aggregation. Each COUNT(CASE WHEN ...) only counts rows matching that status because CASE returns NULL when the condition is false, and COUNT ignores NULLs. This transforms row-based status values into separate columns.",
     ),
     Task(
         id=24,
@@ -268,6 +292,7 @@ TASKS: list[Task] = [
         tables=["ab_tests"],
         solution_sql="SELECT test_name, variant, ROUND(100.0 * SUM(CASE WHEN converted THEN 1 ELSE 0 END) / COUNT(*), 1) AS conv_rate, ROUND(AVG(revenue), 2) AS avg_revenue FROM ab_tests GROUP BY test_name, variant ORDER BY test_name, variant",
         hint="Use CASE inside SUM for conversion counting.",
+        explanation="SUM(CASE WHEN converted THEN 1 ELSE 0 END) counts conversions by summing 1s for converted users. Dividing by COUNT(*) and multiplying by 100.0 gives the percentage. Multiplying by 100.0 (not 100) forces decimal division to avoid integer truncation.",
     ),
 
     # ── Date & Time (25-27) ──
@@ -280,6 +305,7 @@ TASKS: list[Task] = [
         tables=["orders"],
         solution_sql="SELECT DATE_TRUNC('month', ordered_at) AS month, COUNT(*) AS order_count, SUM(total) AS revenue FROM orders GROUP BY month ORDER BY month",
         hint="Use DATE_TRUNC to group by month.",
+        explanation="DATE_TRUNC('month', ordered_at) truncates each timestamp to the first day of its month, effectively creating monthly buckets. GROUP BY on this truncated value aggregates all orders within each month. COUNT and SUM then provide the volume and revenue per month.",
     ),
     Task(
         id=26,
@@ -290,6 +316,7 @@ TASKS: list[Task] = [
         tables=["bookings"],
         solution_sql="SELECT room_type, ROUND(AVG(check_out - check_in), 1) AS avg_nights FROM bookings GROUP BY room_type",
         hint="Subtract dates to get interval in days.",
+        explanation="In PostgreSQL, subtracting two date columns (check_out - check_in) returns the number of days as an integer. AVG() computes the mean stay duration per room_type group, and ROUND(..., 1) formats the result to one decimal place.",
     ),
     Task(
         id=27,
@@ -300,6 +327,7 @@ TASKS: list[Task] = [
         tables=["employees"],
         solution_sql="SELECT first_name, last_name, hire_date, EXTRACT(YEAR FROM AGE(CURRENT_DATE, hire_date)) AS tenure_years FROM employees ORDER BY tenure_years DESC",
         hint="Use AGE() and EXTRACT(YEAR FROM ...).",
+        explanation="AGE(CURRENT_DATE, hire_date) computes the interval between now and the hire date. EXTRACT(YEAR FROM ...) pulls out the year component of that interval, giving tenure in whole years. ORDER BY DESC puts the longest-tenured employees first.",
     ),
 
     # ── String Functions (28-30) ──
@@ -312,6 +340,7 @@ TASKS: list[Task] = [
         tables=["employees"],
         solution_sql="SELECT SPLIT_PART(email, '@', 2) AS domain, COUNT(*) AS emp_count FROM employees GROUP BY domain",
         hint="Use SPLIT_PART to extract after @.",
+        explanation="SPLIT_PART(email, '@', 2) splits the email string on the '@' delimiter and returns the second part (the domain). GROUP BY on the extracted domain then aggregates employees per domain, and COUNT(*) gives the total per group.",
     ),
     Task(
         id=29,
@@ -322,6 +351,7 @@ TASKS: list[Task] = [
         tables=["employees"],
         solution_sql="SELECT UPPER(first_name || ' ' || last_name) AS full_name FROM employees",
         hint="Use UPPER() and || for concatenation.",
+        explanation="The || operator concatenates strings in PostgreSQL. first_name || ' ' || last_name joins the two names with a space. UPPER() then converts the entire concatenated string to uppercase letters.",
     ),
     Task(
         id=30,
@@ -332,6 +362,7 @@ TASKS: list[Task] = [
         tables=["streams"],
         solution_sql="SELECT DISTINCT song, LENGTH(song) AS title_length FROM streams ORDER BY title_length DESC LIMIT 5",
         hint="Use LENGTH() and ORDER BY with LIMIT.",
+        explanation="LENGTH() returns the number of characters in a string. DISTINCT ensures each song title appears only once. ORDER BY title_length DESC sorts longest titles first, and LIMIT 5 restricts the output to the top 5 results.",
     ),
 
     # ── Set Operations (31-33) ──
@@ -344,6 +375,7 @@ TASKS: list[Task] = [
         tables=["employees", "customers"],
         solution_sql="SELECT first_name AS name FROM employees UNION SELECT name FROM customers",
         hint="Use UNION to combine two SELECT statements.",
+        explanation="UNION combines the results of two SELECT statements and automatically removes duplicates. Both queries must return the same number of columns with compatible types. The alias AS name on the first query sets the column name for the combined result.",
     ),
     Task(
         id=32,
@@ -354,6 +386,7 @@ TASKS: list[Task] = [
         tables=["customers", "bookings"],
         solution_sql="SELECT city FROM customers INTERSECT SELECT city FROM bookings",
         hint="Use INTERSECT to find common values.",
+        explanation="INTERSECT returns only rows that appear in both query results. It finds cities present in both the customers and bookings tables. Like UNION, it automatically eliminates duplicates from the final result.",
     ),
     Task(
         id=33,
@@ -364,6 +397,7 @@ TASKS: list[Task] = [
         tables=["bookings", "customers"],
         solution_sql="SELECT DISTINCT city FROM bookings EXCEPT SELECT city FROM customers",
         hint="Use EXCEPT to find values only in the first set.",
+        explanation="EXCEPT returns rows from the first query that do not appear in the second query. Here it finds cities in bookings that have no matching entry in customers. DISTINCT on the first query ensures unique results, though EXCEPT already removes duplicates.",
     ),
 
     # ── Advanced Analytics (34-36) ──
@@ -376,6 +410,7 @@ TASKS: list[Task] = [
         tables=["clickstream"],
         solution_sql="SELECT action, COUNT(DISTINCT user_id) AS unique_users FROM clickstream WHERE action IN ('view', 'click', 'add_to_cart', 'purchase') GROUP BY action ORDER BY unique_users DESC",
         hint="Group by action and count distinct users.",
+        explanation="This funnel analysis counts unique users at each step using COUNT(DISTINCT user_id). The WHERE IN clause filters to only the relevant funnel actions. Ordering by unique_users DESC shows the widest part of the funnel first, revealing drop-off between steps.",
     ),
     Task(
         id=35,
@@ -386,6 +421,7 @@ TASKS: list[Task] = [
         tables=["subscriptions"],
         solution_sql="SELECT ROUND(100.0 * COUNT(CASE WHEN is_active = FALSE THEN 1 END) / COUNT(*), 1) AS churn_rate FROM subscriptions",
         hint="Use CASE to count churned vs total.",
+        explanation="Churn rate is the percentage of subscriptions that have ended. COUNT(CASE WHEN is_active = FALSE THEN 1 END) counts only churned subscriptions, while COUNT(*) gives the total. Dividing and multiplying by 100.0 produces the percentage with decimal precision.",
     ),
     Task(
         id=36,
@@ -396,6 +432,7 @@ TASKS: list[Task] = [
         tables=["ab_tests"],
         solution_sql="SELECT test_name, variant, SUM(revenue) AS total_revenue, SUM(CASE WHEN converted THEN 1 ELSE 0 END) AS conversions, ROUND(AVG(CASE WHEN converted THEN revenue END), 2) AS avg_converted_revenue FROM ab_tests GROUP BY test_name, variant ORDER BY test_name, variant",
         hint="Filter revenue with CASE WHEN converted.",
+        explanation="This query compares A/B test variants using conditional aggregation. AVG(CASE WHEN converted THEN revenue END) computes the average revenue only for converted users, ignoring non-converters (who return NULL from CASE and are excluded by AVG). GROUP BY test_name, variant gives per-variant metrics.",
     ),
 
     # ── Self-Joins (37-39) ──
@@ -408,6 +445,7 @@ TASKS: list[Task] = [
         tables=["employees"],
         solution_sql="SELECT e1.first_name AS higher_earner, e2.first_name AS lower_earner, e1.department_id, e1.salary - e2.salary AS salary_diff FROM employees e1 JOIN employees e2 ON e1.department_id = e2.department_id AND e1.salary > e2.salary ORDER BY e1.department_id, salary_diff DESC",
         hint="Join employees to itself on department_id, comparing salaries.",
+        explanation="A self-join uses two aliases (e1, e2) for the same table to compare rows against each other. The ON clause matches employees in the same department and ensures e1 earns more than e2, creating pairs. The salary difference is calculated by simple subtraction.",
     ),
     Task(
         id=38,
@@ -418,6 +456,7 @@ TASKS: list[Task] = [
         tables=["employees"],
         solution_sql="SELECT e1.first_name, e1.last_name, e1.department_id, e1.hire_date, COUNT(e2.id) AS senior_colleagues FROM employees e1 LEFT JOIN employees e2 ON e1.department_id = e2.department_id AND e2.hire_date < e1.hire_date GROUP BY e1.id, e1.first_name, e1.last_name, e1.department_id, e1.hire_date ORDER BY e1.department_id, e1.hire_date",
         hint="LEFT JOIN employees to itself where the second copy has an earlier hire_date.",
+        explanation="This self-join matches each employee (e1) with colleagues in the same department hired before them (e2.hire_date < e1.hire_date). LEFT JOIN ensures employees with no senior colleagues still appear (with a count of 0). COUNT(e2.id) counts only matched rows, not NULLs.",
     ),
     Task(
         id=39,
@@ -428,6 +467,7 @@ TASKS: list[Task] = [
         tables=["salaries_log", "employees"],
         solution_sql="SELECT e1.first_name || ' ' || e1.last_name AS employee_1, e2.first_name || ' ' || e2.last_name AS employee_2, EXTRACT(YEAR FROM s1.changed_at)::INT AS change_year FROM salaries_log s1 JOIN salaries_log s2 ON EXTRACT(YEAR FROM s1.changed_at) = EXTRACT(YEAR FROM s2.changed_at) AND s1.id < s2.id JOIN employees e1 ON s1.employee_id = e1.id JOIN employees e2 ON s2.employee_id = e2.id ORDER BY change_year",
         hint="Self-join salaries_log comparing EXTRACT(YEAR FROM changed_at), use s1.id < s2.id to avoid duplicates.",
+        explanation="The self-join on salaries_log matches salary change records from the same calendar year using EXTRACT(YEAR FROM changed_at). The condition s1.id < s2.id prevents duplicate pairs (A,B vs B,A) and self-matches. Additional JOINs to employees resolve employee_id to full names.",
     ),
 
     # ── Advanced JOINs (40-42) ──
@@ -440,6 +480,7 @@ TASKS: list[Task] = [
         tables=["customers", "subscriptions"],
         solution_sql="SELECT c.name AS customer_name, c.city, s.plan, s.price, s.is_active FROM customers c FULL OUTER JOIN subscriptions s ON c.id = s.customer_id ORDER BY c.name",
         hint="Use FULL OUTER JOIN to include unmatched rows from both tables.",
+        explanation="FULL OUTER JOIN includes all rows from both tables. Customers without subscriptions appear with NULL subscription columns, and subscriptions without matching customers appear with NULL customer columns. This gives a complete view of both datasets without losing any data.",
     ),
     Task(
         id=41,
@@ -450,6 +491,7 @@ TASKS: list[Task] = [
         tables=["products", "bookings"],
         solution_sql="SELECT p.name AS product_name, b.city FROM products p CROSS JOIN (SELECT DISTINCT city FROM bookings) b ORDER BY p.name, b.city",
         hint="CROSS JOIN produces the Cartesian product. Use a subquery with DISTINCT for unique cities.",
+        explanation="CROSS JOIN produces every combination of rows from both sides (Cartesian product). A subquery with DISTINCT extracts unique cities from bookings, so each product is paired with every distinct city. This is useful for generating matrices or report templates.",
     ),
     Task(
         id=42,
@@ -460,6 +502,7 @@ TASKS: list[Task] = [
         tables=["orders", "invoices"],
         solution_sql="SELECT o.id, o.customer_id, o.total, o.status FROM orders o LEFT JOIN invoices i ON o.id = i.order_id WHERE i.id IS NULL ORDER BY o.id",
         hint="LEFT JOIN orders to invoices, then filter WHERE the invoice side IS NULL.",
+        explanation="This is the LEFT JOIN anti-pattern for finding unmatched rows. LEFT JOIN keeps all orders, placing NULLs where no invoice matches. WHERE i.id IS NULL then filters to only those orders with no corresponding invoice. This is a common alternative to NOT EXISTS.",
     ),
 
     # ── NULL Handling (43-45) ──
@@ -472,6 +515,7 @@ TASKS: list[Task] = [
         tables=["subscriptions"],
         solution_sql="SELECT id, customer_id, plan, COALESCE(ended_at::TEXT, 'ongoing') AS end_status FROM subscriptions ORDER BY id",
         hint="COALESCE returns the first non-NULL argument.",
+        explanation="COALESCE takes multiple arguments and returns the first one that is not NULL. Here, if ended_at has a value, it is cast to text and displayed. If ended_at is NULL, COALESCE falls through to the second argument, returning the string 'ongoing'.",
     ),
     Task(
         id=44,
@@ -482,6 +526,7 @@ TASKS: list[Task] = [
         tables=["subscriptions"],
         solution_sql="SELECT CASE WHEN ended_at IS NULL THEN 'active' ELSE 'ended' END AS status, COUNT(*) AS count FROM subscriptions GROUP BY status ORDER BY status",
         hint="Use CASE with IS NULL to categorize, then GROUP BY.",
+        explanation="IS NULL is the proper way to check for NULL values (= NULL does not work in SQL). The CASE expression categorizes each subscription as active or ended based on whether ended_at is NULL. GROUP BY on the computed status column then counts each category.",
     ),
     Task(
         id=45,
@@ -492,6 +537,7 @@ TASKS: list[Task] = [
         tables=["ab_tests"],
         solution_sql="SELECT test_name, COUNT(*) AS total_users, SUM(CASE WHEN converted THEN 1 ELSE 0 END) AS conversions, ROUND(SUM(revenue) / NULLIF(SUM(CASE WHEN converted THEN 1 ELSE 0 END), 0), 2) AS revenue_per_conversion FROM ab_tests GROUP BY test_name ORDER BY test_name",
         hint="NULLIF(x, 0) returns NULL instead of 0, preventing division errors.",
+        explanation="NULLIF(value, 0) returns NULL when the value equals 0, which prevents division-by-zero errors (dividing by NULL yields NULL instead of an error). This is a defensive pattern essential when the denominator could be zero, such as when a test has zero conversions.",
     ),
 
     # ── EXISTS & NOT EXISTS (46-48) ──
@@ -504,6 +550,7 @@ TASKS: list[Task] = [
         tables=["customers", "orders"],
         solution_sql="SELECT c.id, c.name, c.city FROM customers c WHERE EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id) ORDER BY c.id",
         hint="EXISTS returns TRUE if the subquery returns at least one row.",
+        explanation="EXISTS checks whether the correlated subquery returns any rows. For each customer, it looks for at least one order with a matching customer_id. SELECT 1 is a convention since EXISTS only cares about row existence, not the actual values returned.",
     ),
     Task(
         id=47,
@@ -514,6 +561,7 @@ TASKS: list[Task] = [
         tables=["employees", "salaries_log"],
         solution_sql="SELECT e.id, e.first_name, e.last_name, e.salary FROM employees e WHERE NOT EXISTS (SELECT 1 FROM salaries_log sl WHERE sl.employee_id = e.id) ORDER BY e.id",
         hint="NOT EXISTS returns TRUE when the subquery returns zero rows.",
+        explanation="NOT EXISTS is the inverse of EXISTS -- it returns TRUE when the subquery finds no matching rows. For each employee, the subquery checks if any salary change records exist. Only employees with zero matching records in salaries_log pass the filter.",
     ),
     Task(
         id=48,
@@ -524,6 +572,7 @@ TASKS: list[Task] = [
         tables=["departments", "employees"],
         solution_sql="SELECT d.id, d.name FROM departments d WHERE EXISTS (SELECT 1 FROM employees e WHERE e.department_id = d.id AND e.salary > 90000) ORDER BY d.id",
         hint="Use EXISTS with a correlated subquery filtering by salary.",
+        explanation="The correlated subquery checks for employees in each department earning over 90,000. EXISTS returns TRUE as soon as it finds one matching employee, making it efficient since it short-circuits without scanning all rows. This approach is often faster than JOIN + DISTINCT for existence checks.",
     ),
 
     # ── Advanced Window Functions (49-51) ──
@@ -536,6 +585,7 @@ TASKS: list[Task] = [
         tables=["employees"],
         solution_sql="SELECT first_name, last_name, salary, NTILE(4) OVER (ORDER BY salary) AS quartile FROM employees",
         hint="NTILE(4) splits rows into 4 roughly equal groups.",
+        explanation="NTILE(4) divides the ordered result set into 4 roughly equal buckets (quartiles) and assigns a bucket number (1-4) to each row. ORDER BY salary ensures the lowest salaries go into quartile 1 and the highest into quartile 4. If rows do not divide evenly, earlier buckets get one extra row.",
     ),
     Task(
         id=50,
@@ -546,6 +596,7 @@ TASKS: list[Task] = [
         tables=["employees", "departments"],
         solution_sql="SELECT e.first_name, e.last_name, d.name AS department, e.salary, FIRST_VALUE(e.salary) OVER (PARTITION BY e.department_id ORDER BY e.salary DESC) AS max_salary, LAST_VALUE(e.salary) OVER (PARTITION BY e.department_id ORDER BY e.salary DESC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS min_salary FROM employees e JOIN departments d ON e.department_id = d.id",
         hint="LAST_VALUE needs ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING to see all rows.",
+        explanation="FIRST_VALUE returns the first row's value in the window frame -- with ORDER BY salary DESC, that is the highest salary. LAST_VALUE requires an explicit ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING frame, because the default frame only extends to the current row, which would give incorrect results.",
     ),
     Task(
         id=51,
@@ -556,6 +607,7 @@ TASKS: list[Task] = [
         tables=["orders"],
         solution_sql="SELECT id, ordered_at, total, ROUND(PERCENT_RANK() OVER (ORDER BY total)::NUMERIC, 4) AS pct_rank FROM orders",
         hint="PERCENT_RANK() = (rank - 1) / (total_rows - 1), returns 0 to 1.",
+        explanation="PERCENT_RANK() calculates the relative rank as (rank - 1) / (total_rows - 1), producing a value between 0 and 1. The ::NUMERIC cast is needed because ROUND() in PostgreSQL requires a numeric type. This shows what percentage of orders have a lower total than each given order.",
     ),
 
     # ── Expert Challenges (52-54) ──
@@ -568,6 +620,7 @@ TASKS: list[Task] = [
         tables=["clickstream"],
         solution_sql="SELECT session_id, user_id, page, action, LEAD(page) OVER (PARTITION BY session_id ORDER BY created_at) AS next_page FROM clickstream ORDER BY session_id, created_at",
         hint="LEAD(column) returns the value from the next row in the partition.",
+        explanation="LEAD(page) looks ahead to the next row within the same partition and returns its page value. PARTITION BY session_id ensures the look-ahead stays within a single session. The last event in each session will have NULL as next_page since there is no subsequent row.",
     ),
     Task(
         id=53,
@@ -578,6 +631,7 @@ TASKS: list[Task] = [
         tables=["customers", "orders"],
         solution_sql="WITH spending AS (SELECT c.id, c.name, SUM(o.total) AS total_spent FROM customers c JOIN orders o ON c.id = o.customer_id GROUP BY c.id, c.name) SELECT name, total_spent, NTILE(3) OVER (ORDER BY total_spent) AS spending_tier FROM spending",
         hint="Build a CTE for per-customer totals, then apply NTILE(3) on the result.",
+        explanation="This combines a CTE with a window function in two steps. The CTE first aggregates total spending per customer using SUM and GROUP BY. The main query then applies NTILE(3) to divide customers into three spending tiers (low, mid, high) based on their total spending.",
     ),
     Task(
         id=54,
@@ -588,6 +642,7 @@ TASKS: list[Task] = [
         tables=["orders"],
         solution_sql="WITH monthly AS (SELECT DATE_TRUNC('month', ordered_at) AS month, SUM(total) AS revenue FROM orders GROUP BY month) SELECT month, revenue, ROUND(AVG(revenue) OVER (ORDER BY month ROWS BETWEEN 2 PRECEDING AND CURRENT ROW), 2) AS moving_avg_3m FROM monthly ORDER BY month",
         hint="Use a CTE for monthly totals, then a window function with ROWS BETWEEN for the moving average.",
+        explanation="The CTE aggregates revenue by month using DATE_TRUNC. The main query then computes a 3-month moving average using AVG() with a sliding window frame (ROWS BETWEEN 2 PRECEDING AND CURRENT ROW). This frame includes the current month and the two months before it, smoothing out short-term fluctuations.",
     ),
 ]
 

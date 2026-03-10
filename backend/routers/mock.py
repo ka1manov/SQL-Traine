@@ -1,6 +1,7 @@
 import uuid
 import random
-from datetime import datetime
+import time
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 from models.schemas import MockStartRequest, MockSession, MockEndRequest, MockResult
 from data.tasks import TASKS
@@ -9,9 +10,21 @@ router = APIRouter(prefix="/api/mock", tags=["mock"])
 
 _sessions: dict[str, dict] = {}
 
+# Clean up sessions older than 2 hours
+_SESSION_MAX_AGE = 7200
+
+
+def _cleanup_stale_sessions():
+    now = time.monotonic()
+    stale = [k for k, v in _sessions.items() if now - v.get("created_mono", 0) > _SESSION_MAX_AGE]
+    for k in stale:
+        _sessions.pop(k, None)
+
 
 @router.post("/start", response_model=MockSession)
 async def start_mock(req: MockStartRequest):
+    _cleanup_stale_sessions()
+
     candidates = TASKS
     if req.difficulty:
         candidates = [t for t in candidates if t.difficulty == req.difficulty]
@@ -20,7 +33,7 @@ async def start_mock(req: MockStartRequest):
 
     selected = random.sample(candidates, min(5, len(candidates)))
     session_id = uuid.uuid4().hex[:12]
-    started_at = datetime.utcnow().isoformat()
+    started_at = datetime.now(timezone.utc).isoformat()
 
     session = MockSession(
         session_id=session_id,
@@ -28,7 +41,7 @@ async def start_mock(req: MockStartRequest):
         time_limit=1800,
         started_at=started_at,
     )
-    _sessions[session_id] = {"session": session, "started_at": started_at}
+    _sessions[session_id] = {"session": session, "started_at": started_at, "created_mono": time.monotonic()}
     return session
 
 

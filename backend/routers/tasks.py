@@ -19,7 +19,7 @@ async def list_tasks(category: str | None = None, difficulty: str | None = None)
         result = [t for t in result if t.category == category]
     if difficulty:
         result = [t for t in result if t.difficulty == difficulty]
-    return [TaskOut(**t.__dict__) for t in result]
+    return [TaskOut(**{k: v for k, v in t.__dict__.items() if k != 'solution_sql'}) for t in result]
 
 
 @router.get("/tasks/meta")
@@ -71,7 +71,7 @@ async def check_task(task_id: int, req: CheckRequest):
 
 @router.get("/flashcards")
 async def list_flashcards():
-    return [f.__dict__ for f in FLASHCARDS]
+    return [asdict(f) for f in FLASHCARDS]
 
 
 @router.get("/assignments")

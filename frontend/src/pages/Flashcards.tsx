@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useMemo } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Brain, ChevronLeft, ChevronRight, RotateCcw, Shuffle } from 'lucide-react';
 import { fetchFlashcards, fetchFlashcardProgress, reviewFlashcard } from '../utils/api';
 import { AuthContext } from '../contexts/AuthContext';
@@ -18,14 +18,13 @@ export default function Flashcards() {
     }
   }, [auth?.isLoggedIn]);
 
-  const shuffled = useMemo(() => [...cards], [cards]);
-
   const handleShuffle = () => {
-    for (let i = shuffled.length - 1; i > 0; i--) {
+    const copy = [...cards];
+    for (let i = copy.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      [copy[i], copy[j]] = [copy[j], copy[i]];
     }
-    setCards([...shuffled]);
+    setCards(copy);
     setIndex(0);
     setFlipped(false);
   };

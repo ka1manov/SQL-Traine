@@ -1,20 +1,13 @@
-from fastapi import APIRouter, Request
-from services.auth import get_user_id_from_token
+from fastapi import APIRouter, Request, HTTPException
+from services.dependencies import get_user_id, require_user_id
 from db.connection import get_pool
 
 router = APIRouter(prefix="/api", tags=["history"])
 
 
-async def _get_user_id(request: Request) -> int | None:
-    auth = request.headers.get("authorization", "")
-    if auth.startswith("Bearer "):
-        return await get_user_id_from_token(auth[7:])
-    return None
-
-
 @router.get("/history")
 async def get_history(request: Request, limit: int = 50):
-    user_id = await _get_user_id(request)
+    user_id = await get_user_id(request)
     if not user_id:
         return []
     pool = await get_pool()
@@ -30,9 +23,7 @@ async def get_history(request: Request, limit: int = 50):
 
 @router.delete("/history")
 async def clear_history(request: Request):
-    user_id = await _get_user_id(request)
-    if not user_id:
-        return {"cleared": 0}
+    user_id = await require_user_id(request)
     pool = await get_pool()
     async with pool.acquire() as conn:
         result = await conn.execute("DELETE FROM query_history WHERE user_id = $1", user_id)

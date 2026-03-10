@@ -8,10 +8,7 @@ interface Props {
 const shortcuts = [
   { keys: ['Ctrl', 'Enter'], action: 'Run query / Check solution' },
   { keys: ['Ctrl', 'Shift', 'F'], action: 'Format SQL' },
-  { keys: ['Ctrl', 'S'], action: 'Save to history' },
   { keys: ['Ctrl', '/'], action: 'Toggle comment' },
-  { keys: ['Ctrl', 'L'], action: 'Clear editor' },
-  { keys: ['Ctrl', 'K'], action: 'Show keyboard shortcuts' },
   { keys: ['Tab'], action: 'Indent / Accept suggestion' },
   { keys: ['Esc'], action: 'Close modal' },
 ];

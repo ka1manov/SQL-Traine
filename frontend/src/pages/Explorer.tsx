@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Table2, ChevronLeft, ChevronRight, Key, Link2 } from 'lucide-react';
 import ResultTable from '../components/ResultTable';
 import { fetchTables, fetchTableData, fetchTableSchema } from '../utils/api';
@@ -13,14 +13,7 @@ export default function Explorer() {
   const [page, setPage] = useState(0);
   const pageSize = 50;
 
-  useEffect(() => {
-    fetchTables().then(t => {
-      setTables(t);
-      if (t.length > 0) loadTable(t[0], 0);
-    }).catch(console.error);
-  }, []);
-
-  const loadTable = async (name: string, pg: number) => {
+  const loadTable = useCallback(async (name: string, pg: number) => {
     setSelected(name);
     setPage(pg);
     setLoading(true);
@@ -37,7 +30,14 @@ export default function Explorer() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchTables().then(t => {
+      setTables(t);
+      if (t.length > 0) loadTable(t[0], 0);
+    }).catch(console.error);
+  }, [loadTable]);
 
   const totalRows = data?.total_rows ?? 0;
   const totalPages = Math.ceil(totalRows / pageSize);
